@@ -1,0 +1,9 @@
+# direnv
+.direnv
+.envrc
+
+# Editor Settings
+.zed/*
+
+# Runtime Settings
+.mise.toml
