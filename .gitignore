@@ -7,3 +7,7 @@
 
 # Runtime Settings
 .mise.toml
+
+
+# Environment Variables
+.env
