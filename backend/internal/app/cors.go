@@ -3,9 +3,12 @@ package app
 import (
 	"net/http"
 	"strings"
+
+	"github.com/labstack/echo/v5"
+	"github.com/labstack/echo/v5/middleware"
 )
 
-var corsAllowedHeaders = strings.Join([]string{
+var corsAllowedHeaders = []string{
 	"Authorization",
 	"Connect-Protocol-Version",
 	"Connect-Timeout-Ms",
@@ -13,40 +16,44 @@ var corsAllowedHeaders = strings.Join([]string{
 	"Grpc-Timeout",
 	"X-Grpc-Web",
 	"X-User-Agent",
-}, ", ")
+}
+
+var corsExposedHeaders = []string{
+	"Grpc-Status",
+	"Grpc-Message",
+	"Grpc-Status-Details-Bin",
+}
 
 // corsMiddlewareは、設定したfrontend originからのConnectRPC requestだけを許可する。
 // Bearer token方式なのでcookie用のcredentials headerは付与しない。
-func corsMiddleware(allowedOrigins []string, next http.Handler) http.Handler {
+func corsMiddleware(allowedOrigins []string) echo.MiddlewareFunc {
 	allowed := make(map[string]struct{}, len(allowedOrigins))
 	for _, origin := range allowedOrigins {
 		allowed[strings.TrimSpace(origin)] = struct{}{}
 	}
 
-	return http.HandlerFunc(func(writer http.ResponseWriter, request *http.Request) {
-		origin := request.Header.Get("Origin")
-		if origin == "" {
-			next.ServeHTTP(writer, request)
-			return
-		}
-		if _, ok := allowed[origin]; !ok {
-			http.Error(writer, "origin is not allowed", http.StatusForbidden)
-			return
-		}
-
-		header := writer.Header()
-		header.Set("Access-Control-Allow-Origin", origin)
-		header.Add("Vary", "Origin")
-		header.Set("Access-Control-Expose-Headers", "Grpc-Status, Grpc-Message, Grpc-Status-Details-Bin")
-
-		if request.Method == http.MethodOptions {
-			header.Set("Access-Control-Allow-Methods", "GET, POST, OPTIONS")
-			header.Set("Access-Control-Allow-Headers", corsAllowedHeaders)
-			header.Set("Access-Control-Max-Age", "7200")
-			writer.WriteHeader(http.StatusNoContent)
-			return
-		}
-
-		next.ServeHTTP(writer, request)
+	return middleware.CORSWithConfig(middleware.CORSConfig{
+		// Echo標準では未許可Originの通常requestを処理するため、既存の
+		// allowlist境界を維持するcustom validatorを設定する。
+		UnsafeAllowOriginFunc: func(
+			_ *echo.Context,
+			origin string,
+		) (string, bool, error) {
+			if _, ok := allowed[origin]; ok {
+				return origin, true, nil
+			}
+			return "", false, echo.NewHTTPError(
+				http.StatusForbidden,
+				"origin is not allowed",
+			)
+		},
+		AllowMethods: []string{
+			http.MethodGet,
+			http.MethodPost,
+			http.MethodOptions,
+		},
+		AllowHeaders:  corsAllowedHeaders,
+		ExposeHeaders: corsExposedHeaders,
+		MaxAge:        7200,
 	})
 }

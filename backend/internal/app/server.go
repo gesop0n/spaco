@@ -61,21 +61,19 @@ func NewServer(ctx context.Context, cfg config.Config) (*Server, error) {
 		return nil, err
 	}
 
-	mux := http.NewServeMux()
 	accountPath, accountHandler := accountModule.ConnectHandler(
-		connect.WithInterceptors(authenticationModule.Interceptor()),
+		connect.WithInterceptors(
+			// loggingを外側に置き、認証Interceptorが返す失敗も記録する。
+			newRPCLoggingInterceptor(slog.Default()),
+			authenticationModule.Interceptor(),
+		),
 	)
-	mux.Handle(accountPath, accountHandler)
-	mux.HandleFunc("GET /healthz", func(writer http.ResponseWriter, _ *http.Request) {
-		writer.Header().Set("Content-Type", "text/plain; charset=utf-8")
-		writer.WriteHeader(http.StatusOK)
-		_, _ = writer.Write([]byte("ok\n"))
-	})
+	router := newRouter(accountPath, accountHandler, cfg.Server.AllowedOrigins)
 
 	return &Server{
 		httpServer: &http.Server{
 			Addr:              cfg.Server.Address,
-			Handler:           corsMiddleware(cfg.Server.AllowedOrigins, mux),
+			Handler:           router,
 			ReadHeaderTimeout: 5 * time.Second,
 			IdleTimeout:       60 * time.Second,
 		},

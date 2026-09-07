@@ -15,6 +15,10 @@ import (
 )
 
 func main() {
+	// application全体のslogをJSONへ統一し、RPCログを収集基盤で扱いやすくする。
+	// tokenやrequest bodyなどの機密情報は、各ログ出力側で属性に含めない。
+	slog.SetDefault(slog.New(slog.NewJSONHandler(os.Stdout, nil)))
+
 	if err := run(); err != nil {
 		slog.Error("server failed", "error", err)
 		os.Exit(1)

@@ -1,6 +1,6 @@
 # spaco backend
 
-Go・ConnectRPC・PostgreSQL・sqlcで構成するAPI serverです。外部認証にはSupabase Authを使用し、JWT検証後はアプリ内の`UserID`だけを各業務moduleへ渡します。
+Go・Echo・ConnectRPC・PostgreSQL・sqlcで構成するAPI serverです。EchoはHTTP routingとmiddleware、ConnectRPCはAPIの通信契約を担当します。外部認証にはSupabase Authを使用し、JWT検証後はアプリ内の`UserID`だけを各業務moduleへ渡します。
 
 ## セットアップ
 
@@ -44,6 +44,8 @@ make migrate-create name=add_reviews
 5. 初回identityならAccountと対応関係をtransaction内で自動作成する。
 6. Account Handlerがcontext内の`UserID`を使ってユースケースを実行する。
 7. PostgreSQL adapterがsqlcの生成コードを通してDBへアクセスする。
+
+ConnectRPCのlogging interceptorは、全RPCのprocedure名、stream種別、protocol、Connect code、処理時間を構造化ログとして記録します。tokenやrequest/response bodyは記録しません。認証Interceptorより外側に置くことで、認証失敗も同じ形式で観測できます。
 
 `shared`にはモジュール固有のHandlerやrepositoryを置かず、現在はモジュール間で同じ意味を持つ`identifier.UserID`だけを置いています。より詳しい依存ルールは[`internal/modules/README.md`](internal/modules/README.md)を参照してください。
 
