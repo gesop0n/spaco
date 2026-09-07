@@ -1,11 +1,15 @@
 package main
 
 import (
+	"context"
 	"errors"
 	"fmt"
 	"log/slog"
 	"os"
+	"os/signal"
+	"syscall"
 
+	"github.com/gesop0n/spaco/backend/internal/app"
 	"github.com/gesop0n/spaco/backend/internal/config"
 	"github.com/joho/godotenv"
 )
@@ -28,7 +32,12 @@ func run() error {
 		return err
 	}
 
-	fmt.Println(cfg)
+	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
+	defer stop()
 
-	return nil
+	server, err := app.NewServer(ctx, cfg)
+	if err != nil {
+		return fmt.Errorf("create server: %w", err)
+	}
+	return server.Run(ctx)
 }

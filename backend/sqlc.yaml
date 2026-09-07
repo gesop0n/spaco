@@ -1,0 +1,17 @@
+version: "2"
+
+sql:
+  - engine: postgresql
+    schema: migrations
+    queries: internal/modules/account/internal/adapter/postgres/queries
+    gen:
+      go:
+        package: accountsqlc
+        out: internal/modules/account/internal/adapter/postgres/sqlc
+        sql_package: pgx/v5
+        emit_interface: true
+        emit_pointers_for_null_types: true
+        omit_unused_structs: true
+        overrides:
+          - db_type: uuid
+            go_type: github.com/google/uuid.UUID

@@ -1,0 +1,27 @@
+version: v2
+clean: true
+
+managed:
+  enabled: true
+  override:
+    - file_option: go_package_prefix
+      value: github.com/gesop0n/spaco/backend/generated
+
+plugins:
+  - remote: buf.build/protocolbuffers/go:v1.36.12
+    out: backend/generated
+    opt:
+      - paths=source_relative
+
+  - remote: buf.build/connectrpc/go:v1.20.0
+    out: backend/generated
+    opt:
+      - paths=source_relative
+
+  - remote: buf.build/bufbuild/es:v2.14.0
+    out: frontend/src/__generated__
+    opt:
+      - target=ts
+
+inputs:
+  - directory: proto

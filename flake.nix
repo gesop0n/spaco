@@ -29,6 +29,7 @@
             pkgs.golangci-lint
             pkgs.sqlc
             pkgs.goose
+            pkgs.postgresql
 
             # Nix
             pkgs.nixfmt-tree
