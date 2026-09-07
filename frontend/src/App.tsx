@@ -24,7 +24,7 @@ function App() {
             <code>HMR</code>
           </p>
         </div>
-        <ul style={{ display: "flex", gap: "1rem", listStyle: "none", padding: 0 }}>
+        <ul className="flex list-none gap-4 p-0">
           <li>
             <button className="counter" onClick={() => setCount((count) => count + 1)}>
               Count is {count}

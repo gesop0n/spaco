@@ -1,3 +1,5 @@
+@import "tailwindcss";
+
 :root {
   --text: #6b6375;
   --text-h: #08060d;
@@ -46,6 +48,25 @@
   #social .button-icon {
     filter: invert(1) brightness(2);
   }
+}
+
+/* 上で定義した CSS 変数を Tailwind のテーマ名に接続する。
+   inline を付けると utility が var() の参照ではなく値を直接展開するため、
+   prefers-color-scheme による :root の上書きがそのまま反映される。 */
+@theme inline {
+  --color-fg: var(--text);
+  --color-fg-strong: var(--text-h);
+  --color-surface: var(--bg);
+  --color-border: var(--border);
+  --color-code: var(--code-bg);
+  --color-accent: var(--accent);
+  --color-accent-soft: var(--accent-bg);
+  --color-accent-line: var(--accent-border);
+
+  --font-sans: var(--sans);
+  --font-mono: var(--mono);
+
+  --shadow-card: var(--shadow);
 }
 
 #root {
