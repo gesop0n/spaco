@@ -16,6 +16,7 @@
   --color-accent-hover: var(--accent-hover);
   --color-accent-soft: var(--accent-bg);
   --color-accent-line: var(--accent-border);
+  --color-danger: #b42335;
   --font-sans: var(--sans);
   --font-mono: var(--mono);
   --font-brand: "Avenir Next", "Trebuchet MS", var(--sans);
