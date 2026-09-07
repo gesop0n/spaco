@@ -1,15 +1,24 @@
+import { zodResolver } from "@hookform/resolvers/zod";
 import { useEffect, useRef, useState } from "react";
-import type { ChangeEvent, FocusEvent, SubmitEvent } from "react";
-import type { AuthField, AuthMode, FieldErrors } from "./types";
-import { getFieldError } from "./validation";
+import { useForm } from "react-hook-form";
+import type { AuthMode } from "./types";
+import { authSchemas } from "./validation";
+import type { AuthFormValues } from "./validation";
 
 export function useAuthForm(mode: AuthMode) {
-  const emailRef = useRef<HTMLInputElement>(null);
-  const passwordRef = useRef<HTMLInputElement>(null);
   const recoveryDialogRef = useRef<HTMLDialogElement>(null);
-  const [errors, setErrors] = useState<FieldErrors>({});
   const [passwordVisible, setPasswordVisible] = useState(false);
   const [showAvailability, setShowAvailability] = useState(false);
+
+  const {
+    register,
+    handleSubmit,
+    formState: { errors },
+  } = useForm<AuthFormValues>({
+    resolver: zodResolver(authSchemas[mode]),
+    mode: "onTouched",
+    defaultValues: { email: "", password: "" },
+  });
 
   useEffect(() => {
     const previousTitle = document.title;
@@ -19,53 +28,16 @@ export function useAuthForm(mode: AuthMode) {
     };
   }, [mode]);
 
-  function handleBlur(event: FocusEvent<HTMLInputElement>) {
-    const input = event.currentTarget;
-    setErrors((current) => ({ ...current, [input.name]: getFieldError(input, mode) }));
-  }
-
-  function handleChange(event: ChangeEvent<HTMLInputElement>) {
-    const input = event.currentTarget;
-    const field = input.name as AuthField;
-    if (errors[field]) {
-      setErrors((current) => ({ ...current, [field]: getFieldError(input, mode) }));
-    }
-    setShowAvailability(false);
-  }
-
-  function handleSubmit(event: SubmitEvent<HTMLFormElement>) {
-    event.preventDefault();
-    const email = emailRef.current;
-    const password = passwordRef.current;
-    if (!email || !password) return;
-
-    const nextErrors = {
-      email: getFieldError(email, mode),
-      password: getFieldError(password, mode),
-    };
-    setErrors(nextErrors);
-    setShowAvailability(false);
-
-    if (nextErrors.email) {
-      email.focus();
-    } else if (nextErrors.password) {
-      password.focus();
-    } else {
-      // Replace this notice with the authentication request when the API is available.
-      setShowAvailability(true);
-    }
-  }
-
   return {
-    emailRef,
-    passwordRef,
     recoveryDialogRef,
     errors,
     passwordVisible,
     showAvailability,
-    handleBlur,
-    handleChange,
-    handleSubmit,
+    emailField: register("email"),
+    passwordField: register("password"),
+    // Replace this notice with the authentication request when the API is available.
+    handleSubmit: handleSubmit(() => setShowAvailability(true)),
+    hideAvailability: () => setShowAvailability(false),
     togglePasswordVisibility: () => setPasswordVisible((visible) => !visible),
     openRecoveryDialog: () => recoveryDialogRef.current?.showModal(),
     closeRecoveryDialog: () => recoveryDialogRef.current?.close(),

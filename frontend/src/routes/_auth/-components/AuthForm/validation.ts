@@ -1,17 +1,27 @@
+import { z } from "zod";
 import type { AuthMode } from "./types";
 
-export function getFieldError(input: HTMLInputElement, mode: AuthMode): string | undefined {
-  if (input.name === "email") {
-    if (input.validity.valueMissing) return "メールアドレスを入力してください。";
-    if (input.validity.typeMismatch) return "メールアドレスの形式を確認してください。";
-  }
+const emailSchema = z
+  .string()
+  .trim()
+  .min(1, "メールアドレスを入力してください。")
+  .pipe(z.email("メールアドレスの形式を確認してください。"));
 
-  if (input.name === "password") {
-    if (!input.value) return "パスワードを入力してください。";
-    if (mode === "register" && input.value.length < 8) {
-      return "パスワードは8文字以上で入力してください。";
-    }
-  }
+const passwordSchema = z.string().min(1, "パスワードを入力してください。");
 
-  return undefined;
-}
+export const loginSchema = z.object({
+  email: emailSchema,
+  password: passwordSchema,
+});
+
+export const registerSchema = z.object({
+  email: emailSchema,
+  password: passwordSchema.pipe(z.string().min(8, "パスワードは8文字以上で入力してください。")),
+});
+
+export type AuthFormValues = z.infer<typeof loginSchema>;
+
+export const authSchemas: Record<AuthMode, z.ZodType<AuthFormValues, AuthFormValues>> = {
+  login: loginSchema,
+  register: registerSchema,
+};

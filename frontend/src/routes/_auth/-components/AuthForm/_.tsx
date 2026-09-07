@@ -8,15 +8,14 @@ const inputClassName =
 export function AuthForm({ mode }: { mode: AuthMode }) {
   const isRegistration = mode === "register";
   const {
-    emailRef,
-    passwordRef,
     recoveryDialogRef,
     errors,
     passwordVisible,
     showAvailability,
-    handleBlur,
-    handleChange,
+    emailField,
+    passwordField,
     handleSubmit,
+    hideAvailability,
     togglePasswordVisibility,
     openRecoveryDialog,
     closeRecoveryDialog,
@@ -37,15 +36,20 @@ export function AuthForm({ mode }: { mode: AuthMode }) {
           </p>
         </div>
 
-        <form method="post" noValidate onSubmit={handleSubmit} aria-labelledby="auth-title">
+        <form
+          method="post"
+          noValidate
+          onSubmit={handleSubmit}
+          onChange={hideAvailability}
+          aria-labelledby="auth-title"
+        >
           <div>
             <label htmlFor="email" className="mb-2 block text-sm leading-6 font-[600]">
               メールアドレス
             </label>
             <input
-              ref={emailRef}
+              {...emailField}
               id="email"
-              name="email"
               type="email"
               inputMode="email"
               autoComplete="username"
@@ -56,12 +60,10 @@ export function AuthForm({ mode }: { mode: AuthMode }) {
               className={inputClassName}
               aria-invalid={Boolean(errors.email)}
               aria-describedby={errors.email ? "email-error" : undefined}
-              onBlur={handleBlur}
-              onChange={handleChange}
             />
             {errors.email && (
               <p id="email-error" className="mt-2 text-xs leading-5 text-danger" aria-live="polite">
-                {errors.email}
+                {errors.email.message}
               </p>
             )}
           </div>
@@ -72,9 +74,8 @@ export function AuthForm({ mode }: { mode: AuthMode }) {
             </label>
             <div className="relative">
               <input
-                ref={passwordRef}
+                {...passwordField}
                 id="password"
-                name="password"
                 type={passwordVisible ? "text" : "password"}
                 autoComplete={isRegistration ? "new-password" : "current-password"}
                 minLength={isRegistration ? 8 : undefined}
@@ -86,8 +87,6 @@ export function AuthForm({ mode }: { mode: AuthMode }) {
                     .filter(Boolean)
                     .join(" ") || undefined
                 }
-                onBlur={handleBlur}
-                onChange={handleChange}
               />
               <button
                 type="button"
@@ -133,7 +132,7 @@ export function AuthForm({ mode }: { mode: AuthMode }) {
                 className="mt-2 text-xs leading-5 text-danger"
                 aria-live="polite"
               >
-                {errors.password}
+                {errors.password.message}
               </p>
             )}
           </div>
