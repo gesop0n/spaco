@@ -2,3 +2,11 @@
 ## 開発環境
 
 Nix で構築する。必要な依存関係は flake.nix に記述する。
+
+
+```
+spaco
+├─ backend
+├─ frontend
+└─ flake.nix
+```
