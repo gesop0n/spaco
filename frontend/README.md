@@ -1,32 +1,34 @@
-# React + TypeScript + Vite
+# spaco frontend
 
-This template provides a minimal setup to get React working in Vite with HMR and some Oxlint rules.
+未ログインユーザー向けのランディングページを `/` に表示します。淡い青と白を基調にした、PC・スマートフォン対応のUIです。
 
-Currently, two official plugins are available:
+「ログイン」「はじめる」は現在、準備中の案内を開きます。認証サービスとの接続は未実装です。
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
+## 開発
 
-## React Compiler
+リポジトリのルートから実行します。Node.js・pnpmは `flake.nix` の開発環境を使用します。
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
-
-## Expanding the Oxlint configuration
-
-If you are developing a production application, we recommend enabling type-aware lint rules by installing `oxlint-tsgolint` and editing `.oxlintrc.json`:
-
-```json
-{
-  "$schema": "./node_modules/oxlint/configuration_schema.json",
-  "plugins": ["react", "typescript", "oxc"],
-  "options": {
-    "typeAware": true
-  },
-  "rules": {
-    "react/rules-of-hooks": "error",
-    "react/only-export-components": ["warn", { "allowConstantExport": true }]
-  }
-}
+```sh
+nix develop
+pnpm --dir frontend install
+pnpm --dir frontend dev
 ```
 
-See the [Oxlint rules documentation](https://oxc.rs/docs/guide/usage/linter/rules) for the full list of rules and categories.
+## 確認
+
+```sh
+pnpm --dir frontend build
+pnpm --dir frontend lint
+pnpm --dir frontend fmt:check
+```
+
+## 構成
+
+- `src/routes/__root.tsx`：共通ルートと404表示。
+- `src/routes/index.tsx`：ランディングページのルート。
+- `src/routes/-components/`：ページ本体と復習のイラスト。
+- `src/index.css`：Tailwindのテーマ、共通ベーススタイル、アニメーション。
+
+画面のスタイルは各コンポーネントのTailwindユーティリティで記述します。既存の表示幅を保つため、`tablet:`（850px以下）、`compact:`（720px以下）、`phone:`（600px以下）、`narrow:`（359px以下）を共通のレスポンシブバリアントとして定義しています。
+
+[TanStack Routerのファイルベースルーティング](https://tanstack.com/router/latest/docs/installation/manual)を使用します。`src/routeTree.gen.ts` はVite起動時に自動生成されるファイルです。型チェックで参照するためGitの管理対象とし、ルートを変更したら開発サーバーを起動して生成結果も含めます。
