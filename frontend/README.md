@@ -4,7 +4,9 @@
 
 「ログイン」は `/login`、「はじめる」は `/register` に遷移します。登録・ログインページは共通のレイアウトを使い、メールアドレスとパスワードの入力チェック、パスワードの表示切替に対応しています。
 
-認証APIとの接続は未実装です。有効な入力で送信すると準備中の案内を表示し、アカウント作成やログインは行いません。「パスワードを忘れた方」も準備中の案内を表示します。登録時のパスワードはUI案に合わせて8文字以上とし、ログイン時は未入力のみチェックします。認証APIを実装する際にサーバー側のルールと揃えます。
+登録・ログインにはSupabase Authを使用します。認証済みrouteでは、Supabaseのaccess tokenをConnectRPCの`Authorization` headerへ設定し、`GetCurrentAccount`でアプリ内accountも確認します。登録時のパスワードは8文字以上、ログイン時は未入力のみを入力エラーとします。
+
+`/app`と`/profile`は認証済みユーザーだけが表示できるrouteです。アプリ内profileが未設定の場合は`/profile`へ移動します。パスワード再設定はまだ未実装です。
 
 ## 開発
 
@@ -13,7 +15,16 @@
 ```sh
 nix develop
 pnpm --dir frontend install
+cp frontend/.env.example frontend/.env.local
 pnpm --dir frontend dev
+```
+
+`.env.local`には次の値を設定します。
+
+```dotenv
+VITE_API_BASE_URL=http://localhost:8080
+VITE_SUPABASE_URL=https://your-project.supabase.co
+VITE_SUPABASE_PUBLISHABLE_KEY=your-publishable-key
 ```
 
 ## 確認
@@ -32,6 +43,11 @@ pnpm --dir frontend fmt:check
 - `src/routes/_auth.tsx`：登録・ログインの共通レイアウトを使うパスレスルート。
 - `src/routes/_auth/register.tsx`・`login.tsx`：登録・ログインのルート。
 - `src/routes/_auth/-components/`：認証画面のレイアウト、フォーム、入力チェック。
+- `src/routes/_authenticated.tsx`：session・accountを確認する認証済みパスレスルート。
+- `src/routes/_authenticated/app.tsx`・`profile.tsx`：マイページとprofile設定ルート。
+- `src/components/AuthProvider/`：Supabase sessionの初期取得と変更監視。
+- `src/lib/connect/`：Connect transport、Bearer token付与、RPCエラー判定。
+- `src/lib/query/`：アプリ全体で共有するTanStack QueryClient。
 - `src/components/PageBackground/`：差し替え可能な6種類の背景。
 - `src/index.css`：Tailwindのテーマ、共通ベーススタイル、アニメーション。
 

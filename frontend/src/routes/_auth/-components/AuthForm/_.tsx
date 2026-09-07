@@ -5,21 +5,23 @@ import type { AuthMode } from "./types";
 const inputClassName =
   "min-h-12.5 w-full rounded-lg border border-[#d5deef] bg-surface px-3.5 py-3 text-base leading-6 text-fg-strong outline-none transition-[border-color,box-shadow] duration-160 placeholder:text-fg/80 hover:border-accent-line focus:border-accent focus:ring-3 focus:ring-accent/15 aria-invalid:border-danger aria-invalid:focus:ring-danger/15 motion-reduce:transition-none";
 
-export function AuthForm({ mode }: { mode: AuthMode }) {
+export function AuthForm({ mode, redirectTo }: { mode: AuthMode; redirectTo?: string }) {
   const isRegistration = mode === "register";
   const {
     recoveryDialogRef,
     errors,
+    formError,
+    isSubmitting,
+    notice,
     passwordVisible,
-    showAvailability,
     emailField,
     passwordField,
     handleSubmit,
-    hideAvailability,
+    hideFeedback,
     togglePasswordVisibility,
     openRecoveryDialog,
     closeRecoveryDialog,
-  } = useAuthForm(mode);
+  } = useAuthForm(mode, redirectTo);
 
   return (
     <>
@@ -40,7 +42,7 @@ export function AuthForm({ mode }: { mode: AuthMode }) {
           method="post"
           noValidate
           onSubmit={handleSubmit}
-          onChange={hideAvailability}
+          onChange={hideFeedback}
           aria-labelledby="auth-title"
         >
           <div>
@@ -139,19 +141,27 @@ export function AuthForm({ mode }: { mode: AuthMode }) {
 
           <button
             type="submit"
-            className="mt-8 flex min-h-12.5 w-full items-center justify-center rounded-[9px] bg-accent px-4 py-3.5 text-sm leading-5 font-[650] text-surface shadow-action transition-[background] duration-160 hover:bg-accent-hover motion-reduce:transition-none"
+            disabled={isSubmitting}
+            className="mt-8 flex min-h-12.5 w-full items-center justify-center rounded-[9px] bg-accent px-4 py-3.5 text-sm leading-5 font-[650] text-surface shadow-action transition-[background,opacity] duration-160 hover:bg-accent-hover disabled:opacity-60 motion-reduce:transition-none"
           >
-            {isRegistration ? "アカウントを作成" : "ログイン"}
+            {isSubmitting ? "送信中…" : isRegistration ? "アカウントを作成" : "ログイン"}
           </button>
 
           <div role="status" aria-live="polite" aria-atomic="true">
-            {showAvailability && (
+            {notice && (
               <p className="mt-5 rounded-lg bg-accent-soft px-4 py-3 text-sm leading-6 text-fg-strong">
-                {isRegistration ? "アカウント登録" : "ログイン"}は現在準備中です。
-                公開までしばらくお待ちください。
+                {notice}
               </p>
             )}
           </div>
+          {formError && (
+            <p
+              className="mt-5 rounded-lg bg-red-50 px-4 py-3 text-sm leading-6 text-danger"
+              role="alert"
+            >
+              {formError}
+            </p>
+          )}
         </form>
       </section>
 
@@ -159,7 +169,7 @@ export function AuthForm({ mode }: { mode: AuthMode }) {
         <span>{isRegistration ? "登録済みの方は" : "アカウントをお持ちでない方は"}</span>
         <Link
           to={isRegistration ? "/login" : "/register"}
-          className="rounded-sm font-[600] text-accent underline-offset-4 hover:underline"
+          className="rounded-sm font-semibold text-accent underline-offset-4 hover:underline"
         >
           {isRegistration ? "ログイン" : "新規登録"}
         </Link>

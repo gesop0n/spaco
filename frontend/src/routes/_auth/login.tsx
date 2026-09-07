@@ -1,6 +1,10 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { AuthForm } from "./-components/AuthForm";
+import { z } from "zod";
+import { LoginPage } from "./-components/LoginPage";
 
 export const Route = createFileRoute("/_auth/login")({
-  component: () => <AuthForm key="login" mode="login" />,
+  validateSearch: z.object({
+    redirectTo: z.string().optional(),
+  }),
+  component: LoginPage,
 });
