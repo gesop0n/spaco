@@ -3,6 +3,8 @@ package config
 import (
 	"fmt"
 	"net/url"
+	"os"
+	"strconv"
 	"strings"
 	"time"
 
@@ -44,7 +46,7 @@ type AppConfig struct {
 }
 
 type ServerConfig struct {
-	Address         string        `env:"SERVER_ADDRESS" envDefault:":8080"`
+	Address         string        `env:"SERVER_ADDRESS"`
 	AllowedOrigins  []string      `env:"CORS_ALLOWED_ORIGINS" envDefault:"http://localhost:5173"`
 	ShutdownTimeout time.Duration `env:"SHUTDOWN_TIMEOUT" envDefault:"10s"`
 }
@@ -81,6 +83,11 @@ func Load() (Config, error) {
 	cfg.Authentication.SupabaseURL = strings.TrimSpace(cfg.Authentication.SupabaseURL)
 	cfg.Authentication.Issuer = strings.TrimSpace(cfg.Authentication.Issuer)
 	cfg.Authentication.JWKSURL = strings.TrimSpace(cfg.Authentication.JWKSURL)
+	serverAddress, err := resolveServerAddress(cfg.Server.Address, os.Getenv("PORT"))
+	if err != nil {
+		return Config{}, fmt.Errorf("load config: %w", err)
+	}
+	cfg.Server.Address = serverAddress
 	for index := range cfg.Server.AllowedOrigins {
 		cfg.Server.AllowedOrigins[index] = strings.TrimSpace(cfg.Server.AllowedOrigins[index])
 	}
@@ -89,6 +96,21 @@ func Load() (Config, error) {
 	}
 
 	return cfg, nil
+}
+
+func resolveServerAddress(address, port string) (string, error) {
+	if address != "" {
+		return address, nil
+	}
+	port = strings.TrimSpace(port)
+	if port == "" {
+		return ":8080", nil
+	}
+	portNumber, err := strconv.Atoi(port)
+	if err != nil || portNumber < 1 || portNumber > 65535 {
+		return "", fmt.Errorf("PORT must be a number between 1 and 65535")
+	}
+	return fmt.Sprintf(":%d", portNumber), nil
 }
 
 func validate(cfg Config) error {

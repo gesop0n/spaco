@@ -34,7 +34,7 @@ func TestRouterServesHealthCheck(t *testing.T) {
 	t.Parallel()
 
 	router := newRouter("/example.Service/", http.NotFoundHandler(), nil)
-	request := httptest.NewRequest(http.MethodGet, "/healthz", nil)
+	request := httptest.NewRequest(http.MethodGet, "/health", nil)
 	response := httptest.NewRecorder()
 
 	router.ServeHTTP(response, request)

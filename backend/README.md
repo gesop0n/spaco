@@ -14,7 +14,33 @@ make migrate-up
 make dev
 ```
 
-起動後は`http://localhost:8080/healthz`で稼働確認できます。
+起動後は`http://localhost:8080/health`で稼働確認できます。Cloud Runで予約されたpathとの衝突を避けるため、`/healthz`ではなく`/health`を使用します。
+
+## コンテナ
+
+Cloud Run向けのコンテナは、repository rootを起点にbuildします。
+
+```sh
+docker build --tag spaco-backend:local ./backend
+docker run --rm --publish 8080:8080 --env-file backend/.env spaco-backend:local
+curl --fail http://localhost:8080/health
+```
+
+multi-stage buildで生成した静的なserver binaryだけを、非rootのdistroless imageで実行します。`.env`、build成果物などはimageへ含めません。Cloud Runでは自動設定される`PORT`をlistenし、`SERVER_ADDRESS`が明示されている場合はそちらを優先します。
+
+初回の疎通確認では、Dockerfileを使ったsource deployも利用できます。`DATABASE_URL`は先にSecret Managerへ登録し、平文の環境変数やrepositoryへ置かないでください。
+
+```sh
+gcloud run deploy spaco-api \
+  --source backend \
+  --region REGION \
+  --no-invoker-iam-check \
+  --set-env-vars ENV=production,CORS_ALLOWED_ORIGINS=https://FRONTEND_ORIGIN,SUPABASE_URL=https://PROJECT_REF.supabase.co \
+  --set-secrets DATABASE_URL=spaco-database-url:VERSION \
+  --startup-probe httpGet.path=/health,timeoutSeconds=2,periodSeconds=5,failureThreshold=12
+```
+
+デプロイ後は表示されたCloud Run URLへ`/health`を付け、`200 OK`と`ok`が返ることを確認します。この手動手順は初回のcontainer・接続確認用です。継続的なデプロイでは、Artifact Registry、Cloud Run、IAM、Secret ManagerをTerraformで管理し、commit SHAごとのimageをCI/CDからデプロイします。
 
 ## 主なMake target
 

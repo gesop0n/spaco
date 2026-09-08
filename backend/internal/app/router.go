@@ -19,7 +19,8 @@ func newRouter(
 	router.Use(middleware.Recover())
 	router.Use(corsMiddleware(allowedOrigins))
 
-	router.GET("/healthz", func(context *echo.Context) error {
+	// Cloud Runでは一部のz終端pathが予約されるため、/healthを使用する。
+	router.GET("/health", func(context *echo.Context) error {
 		return context.String(http.StatusOK, "ok\n")
 	})
 
