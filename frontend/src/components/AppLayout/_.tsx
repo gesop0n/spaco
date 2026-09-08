@@ -17,9 +17,6 @@ export function AppLayout({ children }: { children: ReactNode }) {
           </a>
           <AppSidebar />
           <SidebarInset className="min-w-0 bg-transparent">
-            <header className="flex h-17 shrink-0 items-center gap-3 border-b border-border/70 bg-background/60 px-5 backdrop-blur-sm md:px-8">
-              <span className="text-sm font-medium">学習スペース</span>
-            </header>
             <div
               id="app-content"
               tabIndex={-1}
