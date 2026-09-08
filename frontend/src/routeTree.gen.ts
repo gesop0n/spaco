@@ -16,7 +16,10 @@ import { Route as AuthLoginRouteImport } from './routes/_auth/login'
 import { Route as AuthRegisterRouteImport } from './routes/_auth/register'
 import { Route as AuthenticatedAppRouteImport } from './routes/_authenticated/app'
 import { Route as AuthenticatedMypageRouteImport } from './routes/_authenticated/mypage'
+import { Route as AuthenticatedProblemsRouteImport } from './routes/_authenticated/problems'
 import { Route as AuthenticatedProfileRouteImport } from './routes/_authenticated/profile'
+import { Route as AuthenticatedReviewListRouteImport } from './routes/_authenticated/review-list'
+import { Route as AuthenticatedReviewsRouteImport } from './routes/_authenticated/reviews'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
@@ -51,9 +54,24 @@ const AuthenticatedMypageRoute = AuthenticatedMypageRouteImport.update({
   path: '/mypage',
   getParentRoute: () => AuthenticatedRoute,
 } as any)
+const AuthenticatedProblemsRoute = AuthenticatedProblemsRouteImport.update({
+  id: '/problems',
+  path: '/problems',
+  getParentRoute: () => AuthenticatedRoute,
+} as any)
 const AuthenticatedProfileRoute = AuthenticatedProfileRouteImport.update({
   id: '/profile',
   path: '/profile',
+  getParentRoute: () => AuthenticatedRoute,
+} as any)
+const AuthenticatedReviewListRoute = AuthenticatedReviewListRouteImport.update({
+  id: '/review-list',
+  path: '/review-list',
+  getParentRoute: () => AuthenticatedRoute,
+} as any)
+const AuthenticatedReviewsRoute = AuthenticatedReviewsRouteImport.update({
+  id: '/reviews',
+  path: '/reviews',
   getParentRoute: () => AuthenticatedRoute,
 } as any)
 
@@ -63,7 +81,10 @@ export interface FileRoutesByFullPath {
   '/register': typeof AuthRegisterRoute
   '/app': typeof AuthenticatedAppRoute
   '/mypage': typeof AuthenticatedMypageRoute
+  '/problems': typeof AuthenticatedProblemsRoute
   '/profile': typeof AuthenticatedProfileRoute
+  '/review-list': typeof AuthenticatedReviewListRoute
+  '/reviews': typeof AuthenticatedReviewsRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -71,7 +92,10 @@ export interface FileRoutesByTo {
   '/register': typeof AuthRegisterRoute
   '/app': typeof AuthenticatedAppRoute
   '/mypage': typeof AuthenticatedMypageRoute
+  '/problems': typeof AuthenticatedProblemsRoute
   '/profile': typeof AuthenticatedProfileRoute
+  '/review-list': typeof AuthenticatedReviewListRoute
+  '/reviews': typeof AuthenticatedReviewsRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -82,13 +106,34 @@ export interface FileRoutesById {
   '/_auth/register': typeof AuthRegisterRoute
   '/_authenticated/app': typeof AuthenticatedAppRoute
   '/_authenticated/mypage': typeof AuthenticatedMypageRoute
+  '/_authenticated/problems': typeof AuthenticatedProblemsRoute
   '/_authenticated/profile': typeof AuthenticatedProfileRoute
+  '/_authenticated/review-list': typeof AuthenticatedReviewListRoute
+  '/_authenticated/reviews': typeof AuthenticatedReviewsRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/login' | '/register' | '/app' | '/mypage' | '/profile'
+  fullPaths:
+    | '/'
+    | '/login'
+    | '/register'
+    | '/app'
+    | '/mypage'
+    | '/problems'
+    | '/profile'
+    | '/review-list'
+    | '/reviews'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/login' | '/register' | '/app' | '/mypage' | '/profile'
+  to:
+    | '/'
+    | '/login'
+    | '/register'
+    | '/app'
+    | '/mypage'
+    | '/problems'
+    | '/profile'
+    | '/review-list'
+    | '/reviews'
   id:
     | '__root__'
     | '/'
@@ -98,7 +143,10 @@ export interface FileRouteTypes {
     | '/_auth/register'
     | '/_authenticated/app'
     | '/_authenticated/mypage'
+    | '/_authenticated/problems'
     | '/_authenticated/profile'
+    | '/_authenticated/review-list'
+    | '/_authenticated/reviews'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -158,11 +206,32 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedMypageRouteImport
       parentRoute: typeof AuthenticatedRoute
     }
+    '/_authenticated/problems': {
+      id: '/_authenticated/problems'
+      path: '/problems'
+      fullPath: '/problems'
+      preLoaderRoute: typeof AuthenticatedProblemsRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
     '/_authenticated/profile': {
       id: '/_authenticated/profile'
       path: '/profile'
       fullPath: '/profile'
       preLoaderRoute: typeof AuthenticatedProfileRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
+    '/_authenticated/review-list': {
+      id: '/_authenticated/review-list'
+      path: '/review-list'
+      fullPath: '/review-list'
+      preLoaderRoute: typeof AuthenticatedReviewListRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
+    '/_authenticated/reviews': {
+      id: '/_authenticated/reviews'
+      path: '/reviews'
+      fullPath: '/reviews'
+      preLoaderRoute: typeof AuthenticatedReviewsRouteImport
       parentRoute: typeof AuthenticatedRoute
     }
   }
@@ -183,13 +252,19 @@ const AuthRouteWithChildren = AuthRoute._addFileChildren(AuthRouteChildren)
 interface AuthenticatedRouteChildren {
   AuthenticatedAppRoute: typeof AuthenticatedAppRoute
   AuthenticatedMypageRoute: typeof AuthenticatedMypageRoute
+  AuthenticatedProblemsRoute: typeof AuthenticatedProblemsRoute
   AuthenticatedProfileRoute: typeof AuthenticatedProfileRoute
+  AuthenticatedReviewListRoute: typeof AuthenticatedReviewListRoute
+  AuthenticatedReviewsRoute: typeof AuthenticatedReviewsRoute
 }
 
 const AuthenticatedRouteChildren: AuthenticatedRouteChildren = {
   AuthenticatedAppRoute: AuthenticatedAppRoute,
   AuthenticatedMypageRoute: AuthenticatedMypageRoute,
+  AuthenticatedProblemsRoute: AuthenticatedProblemsRoute,
   AuthenticatedProfileRoute: AuthenticatedProfileRoute,
+  AuthenticatedReviewListRoute: AuthenticatedReviewListRoute,
+  AuthenticatedReviewsRoute: AuthenticatedReviewsRoute,
 }
 
 const AuthenticatedRouteWithChildren = AuthenticatedRoute._addFileChildren(

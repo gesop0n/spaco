@@ -2,12 +2,12 @@ import { Link } from "@tanstack/react-router";
 import {
   BookOpen,
   CalendarCheck2,
+  ChevronLeft,
+  ChevronRight,
   ChevronsUpDown,
   House,
   LoaderCircle,
   LogOut,
-  PanelLeftClose,
-  PanelLeftOpen,
   RotateCcw,
   Search,
   UserRound,
@@ -35,13 +35,14 @@ import {
   SidebarMenuItem,
   SidebarSeparator,
 } from "@/components/ui/sidebar";
+import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { useAppSidebar } from "./_.hook";
 
-const upcomingItems = [
-  { label: "今日の復習", icon: CalendarCheck2 },
-  { label: "問題を探す", icon: Search },
-  { label: "復習リスト", icon: BookOpen },
-];
+const studyItems = [
+  { label: "今日の復習", icon: CalendarCheck2, to: "/reviews" },
+  { label: "問題を登録", icon: Search, to: "/problems" },
+  { label: "復習リスト", icon: BookOpen, to: "/review-list" },
+] as const;
 
 const menuClassName =
   "h-11 gap-3 rounded-xl px-3 text-sm text-muted-foreground transition-colors data-active:bg-sidebar-accent data-active:text-sidebar-accent-foreground data-active:shadow-[inset_0_0_0_1px_var(--sidebar-border)] motion-reduce:transition-none";
@@ -71,24 +72,45 @@ export function AppSidebar() {
   return (
     <>
       {isMobile && (
-        <Button
-          ref={mobileTriggerRef}
-          variant="outline"
-          size="icon-lg"
-          className="fixed bottom-[calc(1.25rem+env(safe-area-inset-bottom))] left-5 z-40 size-11 rounded-xl bg-sidebar text-sidebar-foreground shadow-card md:hidden"
-          onClick={toggleSidebar}
-          hidden={openMobile}
-          aria-label="サイドバーを開く"
-          aria-expanded={openMobile}
-        >
-          <PanelLeftOpen aria-hidden="true" />
-        </Button>
+        <div className="fixed top-1/2 left-0 z-40 -translate-y-1/2 md:hidden" hidden={openMobile}>
+          <Button
+            ref={mobileTriggerRef}
+            variant="outline"
+            size="icon-lg"
+            className="h-11 w-8 rounded-l-none rounded-r-xl border-l-0 bg-sidebar text-muted-foreground shadow-sm"
+            onClick={toggleSidebar}
+            aria-label="サイドバーを開く"
+            aria-expanded={openMobile}
+          >
+            <ChevronRight aria-hidden="true" />
+          </Button>
+        </div>
       )}
       <Sidebar
         collapsible="icon"
         className="border-sidebar-border"
         mobileFinalFocus={mobileTriggerRef}
       >
+        <div className="absolute top-1/2 right-0 z-20 translate-x-1/2 -translate-y-1/2">
+          <Tooltip>
+            <TooltipTrigger
+              render={<Button variant="outline" size="icon" />}
+              className="size-8 rounded-full border-sidebar-border bg-sidebar text-muted-foreground shadow-sm hover:bg-sidebar-accent hover:text-sidebar-accent-foreground max-md:size-11"
+              onClick={toggleSidebar}
+              aria-label={toggleLabel}
+              aria-expanded={!isCollapsed}
+            >
+              {isCollapsed ? (
+                <ChevronRight aria-hidden="true" />
+              ) : (
+                <ChevronLeft aria-hidden="true" />
+              )}
+            </TooltipTrigger>
+            <TooltipContent side="right" sideOffset={8} hidden={isMobile}>
+              {isCollapsed ? "展開する" : "折りたたむ"}
+            </TooltipContent>
+          </Tooltip>
+        </div>
         <SidebarHeader className="gap-5 px-4 pt-7 pb-5 group-data-[collapsible=icon]:px-2">
           <Link
             to="/app"
@@ -132,19 +154,17 @@ export function AppSidebar() {
               </SidebarGroupLabel>
               <SidebarGroupContent>
                 <SidebarMenu className="gap-1">
-                  {upcomingItems.map(({ label, icon: Icon }) => (
+                  {studyItems.map(({ label, icon: Icon, to }) => (
                     <SidebarMenuItem key={label}>
                       <SidebarMenuButton
-                        type="button"
-                        disabled
-                        aria-label={`${label}（準備中）`}
-                        className="h-11 gap-3 rounded-xl px-3 text-muted-foreground disabled:opacity-65"
+                        render={<Link to={to} onClick={closeMobileSidebar} />}
+                        isActive={pathname === to}
+                        aria-current={pathname === to ? "page" : undefined}
+                        tooltip={label}
+                        className={menuClassName}
                       >
                         <Icon aria-hidden="true" />
                         <span>{label}</span>
-                        <span className="ml-auto rounded-md border border-sidebar-border px-1.5 py-0.5 text-[10px] group-data-[collapsible=icon]:hidden">
-                          準備中
-                        </span>
                       </SidebarMenuButton>
                     </SidebarMenuItem>
                   ))}
@@ -155,25 +175,6 @@ export function AppSidebar() {
         </SidebarContent>
 
         <SidebarFooter className="gap-3 pb-4">
-          <SidebarMenu>
-            <SidebarMenuItem>
-              <SidebarMenuButton
-                type="button"
-                tooltip={toggleLabel}
-                aria-label={toggleLabel}
-                aria-expanded={!isCollapsed}
-                className={menuClassName}
-                onClick={toggleSidebar}
-              >
-                {isCollapsed ? (
-                  <PanelLeftOpen aria-hidden="true" />
-                ) : (
-                  <PanelLeftClose aria-hidden="true" />
-                )}
-                <span>{toggleLabel}</span>
-              </SidebarMenuButton>
-            </SidebarMenuItem>
-          </SidebarMenu>
           <SidebarSeparator className="mx-0" />
           <DropdownMenu>
             <DropdownMenuTrigger

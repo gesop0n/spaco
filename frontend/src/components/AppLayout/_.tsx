@@ -17,11 +17,7 @@ export function AppLayout({ children }: { children: ReactNode }) {
           </a>
           <AppSidebar />
           <SidebarInset className="min-w-0 bg-transparent">
-            <div
-              id="app-content"
-              tabIndex={-1}
-              className="flex flex-1 flex-col pb-20 outline-none md:pb-0"
-            >
+            <div id="app-content" tabIndex={-1} className="flex flex-1 flex-col outline-none">
               {children}
             </div>
           </SidebarInset>
