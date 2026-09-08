@@ -1,7 +1,7 @@
 # Modules
 
 このディレクトリには、spacoの業務モジュールと、複数の業務機能を横断して
-ひとつの処理を完結させるapplication moduleを配置する。
+ひとつの処理を完結させるmoduleを配置する。
 
 モジュールはテーブル、画面、RPC、DDD の集約ごとには分割しない。業務上の言葉とルールが一貫し、同じ理由で変更される責務をひとつの単位とする。集約は、各モジュールのドメインモデルの中で整合性を守る単位として設計する。
 
@@ -18,7 +18,7 @@
 この境界で、AtCoder上の提出結果は `submission`、本人が入力する「自力でACできた」などの復習結果は `review` が所有する。後から提出履歴が同期されても、確定済みの復習結果や次回予定を上書きしない。
 
 `authentication` は認証情報そのものを所有する業務モジュールではなく、外部認証と
-`account` を接続するapplication moduleである。パスワード、session、MFAなどの
+`account` を接続するmoduleである。パスワード、session、MFAなどの
 業務ルールは所有せず、SupabaseやConnectRPCへの依存は内部adapterへ閉じ込める。
 
 ## 標準構成
@@ -34,17 +34,17 @@ modules/
     │   └── factory.go         # repository、use case、adapterの生成と接続
     └── internal/
         ├── domain/            # 集約、entity、value object、ドメインルール
-        ├── application/       # use caseと、それが必要とするport
+        ├── usecase/           # use caseと、それが必要とするport
         └── adapter/
             ├── rpc/           # ConnectRPCのhandlerと変換処理
             └── postgres/      # repositoryのPostgreSQL実装
 ```
 
-`domain` はDB、HTTP、ConnectRPC、Protobufの生成型に依存させない。`application` はユースケースを実行し、DBや他モジュールに必要な操作を小さなinterfaceとして定義する。interfaceは原則として利用側に置く。
+`domain` はDB、HTTP、ConnectRPC、Protobufの生成型に依存させない。`usecase` は各ユースケースを個別の型として実装し、DBや他モジュールに必要な操作を小さなinterfaceとして定義する。ユースケースの公開メソッドは`Execute`に統一し、interfaceは原則として利用側に置く。
 
 `adapter/rpc` はProtobufの入出力とアプリケーションの型を変換し、ユースケースを呼び出す。入力検証やエラーからConnectのステータスへの変換はここで行い、復習間隔などの業務ルールは置かない。
 
-`adapter/postgres` は `application` が要求するrepository interfaceを実装する。SQLは同adapter内に置き、sqlcの生成コードを通して実行する。SQL、生成された型、DBライブラリ固有の型はこの配下に閉じ込める。
+`adapter/postgres` は `usecase` が要求するrepository interfaceを実装する。SQLは同adapter内に置き、sqlcの生成コードを通して実行する。SQL、生成された型、DBライブラリ固有の型はこの配下に閉じ込める。
 
 `factory` はモジュール内部の具体的な実装を組み立てる唯一の場所とする。アプリ全体の起動処理はfactoryを呼び、完成したモジュールだけを受け取る。
 
