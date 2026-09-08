@@ -50,7 +50,8 @@ export function useProfileForm() {
           cardinality: undefined,
         }),
       });
-      await router.navigate({ to: "/app", replace: true });
+      // 初回設定はWelcomeへ、マイページからの編集はマイページへ戻す。
+      await router.navigate({ to: account?.setupCompleted ? "/mypage" : "/app", replace: true });
     } catch (error) {
       setServerError(connectErrorMessage(error));
     }

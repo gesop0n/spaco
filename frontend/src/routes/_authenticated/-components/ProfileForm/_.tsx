@@ -20,7 +20,7 @@ export function ProfileForm() {
   } = useProfileForm();
 
   return (
-    <main className="grid min-h-svh place-items-center px-6 py-12">
+    <div className="grid flex-1 place-items-center px-5 py-10 md:px-8 md:py-14">
       <section className="w-full max-w-lg rounded-2xl border border-border bg-surface p-8 shadow-card">
         <h1 className="text-2xl font-bold">プロフィール設定</h1>
         <p className="mt-2 text-sm leading-6 text-fg">
@@ -134,7 +134,7 @@ export function ProfileForm() {
             </button>
             {setupCompleted && (
               <Link
-                to="/app"
+                to="/mypage"
                 className="inline-flex min-h-11 items-center rounded-lg px-4 py-2.5 text-sm font-semibold text-fg hover:bg-accent-soft"
               >
                 キャンセル
@@ -143,6 +143,6 @@ export function ProfileForm() {
           </div>
         </form>
       </section>
-    </main>
+    </div>
   );
 }
