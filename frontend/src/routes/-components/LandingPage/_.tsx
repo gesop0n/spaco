@@ -6,7 +6,7 @@ export function LandingPage() {
   return (
     <PageBackground variant="aurora" intensity="subtle" className="flex min-h-svh flex-col">
       <a
-        className="fixed top-3 left-3 z-10 translate-y-[-160%] rounded-lg bg-accent px-4.5 py-3 text-surface focus:translate-y-0"
+        className="fixed top-3 left-3 z-10 translate-y-[-160%] rounded-lg bg-primary px-4.5 py-3 text-primary-foreground focus:translate-y-0"
         href="#main"
       >
         メインコンテンツへ
@@ -18,10 +18,10 @@ export function LandingPage() {
             to="/"
             aria-label="spaco トップページ"
           >
-            spaco<span className="text-accent">.</span>
+            spaco<span className="text-primary">.</span>
           </Link>
           <Link
-            className="inline-flex min-h-11 items-center rounded-lg border-0 bg-transparent px-4 py-2.5 text-sm leading-normal font-[650] text-accent transition-[background] duration-160 ease-[ease] hover:bg-accent-soft motion-reduce:transition-none phone:px-2.5 phone:text-[13px]"
+            className="inline-flex min-h-11 items-center rounded-lg border-0 bg-transparent px-4 py-2.5 text-sm leading-normal font-[650] text-primary transition-[background] duration-160 ease-[ease] hover:bg-accent-soft motion-reduce:transition-none phone:px-2.5 phone:text-[13px]"
             to="/login"
           >
             ログイン
@@ -40,13 +40,13 @@ export function LandingPage() {
               id="hero-title"
               className="m-0 text-[clamp(48px,calc(32px+3.6vw),84px)] leading-[1.3] font-[750] tracking-[-0.065em]"
             >
-              解き直す<span className="text-accent">。</span>
+              解き直す<span className="text-primary">。</span>
             </h1>
             <p className="mt-4.5 text-[15px] leading-[1.8] tracking-[0.06em] text-fg phone:mt-4 phone:text-[13px]">
               AtCoderの復習を、習慣に。
             </p>
             <Link
-              className="mt-7 inline-flex min-h-13 items-center justify-center gap-7.5 rounded-[10px] border border-transparent bg-accent px-6.25 py-3.5 text-[15px] leading-[1.4] font-[650] text-surface shadow-action transition-[background,translate] duration-160 ease-[ease] hover:-translate-y-0.5 hover:bg-accent-hover active:translate-y-0 motion-reduce:transition-none motion-reduce:hover:translate-y-0 phone:mt-6 phone:min-h-12.5 phone:text-[14px]"
+              className="mt-7 inline-flex min-h-13 items-center justify-center gap-7.5 rounded-[10px] border border-transparent bg-primary px-6.25 py-3.5 text-[15px] leading-[1.4] font-[650] text-primary-foreground shadow-action transition-[background,translate] duration-160 ease-[ease] hover:-translate-y-0.5 hover:bg-accent-hover active:translate-y-0 motion-reduce:transition-none motion-reduce:hover:translate-y-0 phone:mt-6 phone:min-h-12.5 phone:text-[14px]"
               to="/register"
             >
               はじめる

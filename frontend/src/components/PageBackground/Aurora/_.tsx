@@ -8,11 +8,7 @@ export function Aurora() {
       <div
         className="absolute inset-0"
         style={{
-          backgroundImage: [
-            "radial-gradient(ellipse at 95% 0%, #bfd6f2 0%, transparent 40%)",
-            "radial-gradient(ellipse at 0% 100%, #e4eafb 0%, transparent 35%)",
-            "linear-gradient(135deg, #f0f5ff, #fbfdfd 55%, #f2f5fe)",
-          ].join(", "),
+          backgroundImage: "var(--aurora-page-gradient)",
         }}
       />
       <svg
@@ -30,10 +26,10 @@ export function Aurora() {
             y2="490"
             gradientUnits="userSpaceOnUse"
           >
-            <stop stopColor="#9cacfa" />
-            <stop offset="0.45" stopColor="#b5cdf8" />
-            <stop offset="0.8" stopColor="#e0effb" />
-            <stop offset="1" stopColor="#f8fcfd" />
+            <stop stopColor="var(--aurora-blue)" />
+            <stop offset="0.45" stopColor="var(--aurora-sky)" />
+            <stop offset="0.8" stopColor="var(--aurora-ice)" />
+            <stop offset="1" stopColor="var(--aurora-cloud)" />
           </linearGradient>
           <linearGradient
             id={`${id}-cyan`}
@@ -43,10 +39,10 @@ export function Aurora() {
             y2="210"
             gradientUnits="userSpaceOnUse"
           >
-            <stop stopColor="#b6e7f3" />
-            <stop offset="0.35" stopColor="#e4f4fa" />
-            <stop offset="0.65" stopColor="#eaf8fa" />
-            <stop offset="1" stopColor="#c4eaf3" />
+            <stop stopColor="var(--aurora-cyan)" />
+            <stop offset="0.35" stopColor="var(--aurora-mist)" />
+            <stop offset="0.65" stopColor="var(--aurora-cloud)" />
+            <stop offset="1" stopColor="var(--aurora-teal)" />
           </linearGradient>
           <linearGradient
             id={`${id}-pink`}
@@ -56,10 +52,10 @@ export function Aurora() {
             y2="560"
             gradientUnits="userSpaceOnUse"
           >
-            <stop stopColor="#f4dff5" />
-            <stop offset="0.4" stopColor="#e7cef6" />
-            <stop offset="0.75" stopColor="#e5ddfa" stopOpacity="0.7" />
-            <stop offset="1" stopColor="#f6f9fc" stopOpacity="0" />
+            <stop stopColor="var(--aurora-pink)" />
+            <stop offset="0.4" stopColor="var(--aurora-lilac)" />
+            <stop offset="0.75" stopColor="var(--aurora-lavender)" stopOpacity="0.7" />
+            <stop offset="1" stopColor="var(--aurora-cloud)" stopOpacity="0" />
           </linearGradient>
           <linearGradient
             id={`${id}-lower-cyan`}
@@ -69,9 +65,9 @@ export function Aurora() {
             y2="550"
             gradientUnits="userSpaceOnUse"
           >
-            <stop stopColor="#e8f5fb" stopOpacity="0.2" />
-            <stop offset="0.45" stopColor="#ceeafa" />
-            <stop offset="1" stopColor="#d6eef9" />
+            <stop stopColor="var(--aurora-mist)" stopOpacity="0.2" />
+            <stop offset="0.45" stopColor="var(--aurora-ice)" />
+            <stop offset="1" stopColor="var(--aurora-teal)" />
           </linearGradient>
           <linearGradient
             id={`${id}-violet`}
@@ -81,10 +77,10 @@ export function Aurora() {
             y2="960"
             gradientUnits="userSpaceOnUse"
           >
-            <stop stopColor="#ecf3ff" stopOpacity="0.4" />
-            <stop offset="0.35" stopColor="#d5cdfb" />
-            <stop offset="0.8" stopColor="#c9b8f8" />
-            <stop offset="1" stopColor="#e3cef9" />
+            <stop stopColor="var(--aurora-ice)" stopOpacity="0.4" />
+            <stop offset="0.35" stopColor="var(--aurora-lavender)" />
+            <stop offset="0.8" stopColor="var(--aurora-violet)" />
+            <stop offset="1" stopColor="var(--aurora-lilac)" />
           </linearGradient>
           <filter
             id={`${id}-soften`}
@@ -133,7 +129,7 @@ export function Aurora() {
 
         <g
           fill="none"
-          stroke="#fff"
+          stroke="var(--aurora-highlight)"
           strokeWidth="32"
           strokeOpacity="0.65"
           filter={`url(#${id}-highlight)`}

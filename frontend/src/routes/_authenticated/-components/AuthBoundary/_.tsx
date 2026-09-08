@@ -15,7 +15,7 @@ function AuthBoundaryErrorFallback({ onRetryClick }: { onRetryClick: () => void 
       <button
         type="button"
         onClick={onRetryClick}
-        className="mx-auto min-h-11 rounded-lg bg-accent px-5 py-2.5 text-sm font-semibold text-surface hover:bg-accent-hover"
+        className="mx-auto min-h-11 rounded-lg bg-primary px-5 py-2.5 text-sm font-semibold text-primary-foreground hover:bg-accent-hover"
       >
         再試行
       </button>

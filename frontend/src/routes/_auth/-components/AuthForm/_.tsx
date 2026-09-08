@@ -3,7 +3,7 @@ import { useAuthForm } from "./_.hook";
 import type { AuthMode } from "./types";
 
 const inputClassName =
-  "min-h-12.5 w-full rounded-lg border border-[#d5deef] bg-surface px-3.5 py-3 text-base leading-6 text-fg-strong outline-none transition-[border-color,box-shadow] duration-160 placeholder:text-fg/80 hover:border-accent-line focus:border-accent focus:ring-3 focus:ring-accent/15 aria-invalid:border-danger aria-invalid:focus:ring-danger/15 motion-reduce:transition-none";
+  "min-h-12.5 w-full rounded-lg border border-input bg-surface px-3.5 py-3 text-base leading-6 text-fg-strong outline-none transition-[border-color,box-shadow] duration-160 placeholder:text-fg/80 hover:border-accent-line focus:border-primary focus:ring-3 focus:ring-primary/15 aria-invalid:border-danger aria-invalid:focus:ring-danger/15 motion-reduce:transition-none";
 
 export function AuthForm({ mode, redirectTo }: { mode: AuthMode; redirectTo?: string }) {
   const isRegistration = mode === "register";
@@ -26,7 +26,7 @@ export function AuthForm({ mode, redirectTo }: { mode: AuthMode; redirectTo?: st
   return (
     <>
       <section
-        className="rounded-2xl border border-[#d7e0f0] bg-surface px-8 py-9 shadow-card phone:px-6 phone:py-8"
+        className="rounded-2xl border border-border bg-surface px-8 py-9 shadow-card phone:px-6 phone:py-8"
         aria-labelledby="auth-title"
       >
         <div className="mb-8 text-center">
@@ -92,7 +92,7 @@ export function AuthForm({ mode, redirectTo }: { mode: AuthMode; redirectTo?: st
               />
               <button
                 type="button"
-                className="absolute top-1/2 right-1 grid size-11 -translate-y-1/2 place-items-center rounded-md text-fg hover:bg-accent-soft hover:text-accent focus-visible:outline-offset-0"
+                className="absolute top-1/2 right-1 grid size-11 -translate-y-1/2 place-items-center rounded-md text-fg hover:bg-accent-soft hover:text-primary focus-visible:outline-offset-0"
                 aria-label={passwordVisible ? "パスワードを隠す" : "パスワードを表示"}
                 aria-pressed={passwordVisible}
                 aria-controls="password"
@@ -120,7 +120,7 @@ export function AuthForm({ mode, redirectTo }: { mode: AuthMode; redirectTo?: st
               <div className="mt-2 text-right">
                 <button
                   type="button"
-                  className="rounded-sm text-xs leading-5 text-accent underline-offset-4 hover:underline"
+                  className="rounded-sm text-xs leading-5 text-primary underline-offset-4 hover:underline"
                   aria-haspopup="dialog"
                   onClick={openRecoveryDialog}
                 >
@@ -142,7 +142,7 @@ export function AuthForm({ mode, redirectTo }: { mode: AuthMode; redirectTo?: st
           <button
             type="submit"
             disabled={isSubmitting}
-            className="mt-8 flex min-h-12.5 w-full items-center justify-center rounded-[9px] bg-accent px-4 py-3.5 text-sm leading-5 font-[650] text-surface shadow-action transition-[background,opacity] duration-160 hover:bg-accent-hover disabled:opacity-60 motion-reduce:transition-none"
+            className="mt-8 flex min-h-12.5 w-full items-center justify-center rounded-[9px] bg-primary px-4 py-3.5 text-sm leading-5 font-[650] text-primary-foreground shadow-action transition-[background,opacity] duration-160 hover:bg-accent-hover disabled:opacity-60 motion-reduce:transition-none"
           >
             {isSubmitting ? "送信中…" : isRegistration ? "アカウントを作成" : "ログイン"}
           </button>
@@ -169,7 +169,7 @@ export function AuthForm({ mode, redirectTo }: { mode: AuthMode; redirectTo?: st
         <span>{isRegistration ? "登録済みの方は" : "アカウントをお持ちでない方は"}</span>
         <Link
           to={isRegistration ? "/login" : "/register"}
-          className="rounded-sm font-semibold text-accent underline-offset-4 hover:underline"
+          className="rounded-sm font-semibold text-primary underline-offset-4 hover:underline"
         >
           {isRegistration ? "ログイン" : "新規登録"}
         </Link>
@@ -190,7 +190,7 @@ export function AuthForm({ mode, redirectTo }: { mode: AuthMode; redirectTo?: st
           </p>
           <button
             type="button"
-            className="mt-6 min-h-11.5 w-full rounded-lg bg-accent-soft px-4 py-3 text-sm font-[650] text-accent hover:bg-accent-line"
+            className="mt-6 min-h-11.5 w-full rounded-lg bg-accent-soft px-4 py-3 text-sm font-[650] text-primary hover:bg-accent-line"
             onClick={closeRecoveryDialog}
           >
             閉じる

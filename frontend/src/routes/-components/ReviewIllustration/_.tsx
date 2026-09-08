@@ -11,7 +11,7 @@ const cards = [
     title: "もう一度、解く",
     icon: "M20 8a8 8 0 1 0 0 8M20 3v5h-5",
     className:
-      "top-6 left-1/2 z-1 w-[270px] -translate-x-1/2 border-[#d9e3fc] tablet:w-60 compact:top-2.5 compact:w-[174px] narrow:w-42",
+      "top-6 left-1/2 z-1 w-[270px] -translate-x-1/2 border-input tablet:w-60 compact:top-2.5 compact:w-[174px] narrow:w-42",
   },
   {
     name: "next",
@@ -36,13 +36,13 @@ export function ReviewIllustration() {
           fill="none"
         >
           <path
-            className="stroke-[#b3c6f7] stroke-[1.4]"
+            className="stroke-ring/60 stroke-[1.4]"
             vectorEffect="non-scaling-stroke"
             d="M164 193C115 57 387 18 487 70S820 74 799 221C778 358 442 326 178 248"
           />
-          <circle className="fill-accent" cx="317" cy="66" r="4" />
-          <circle className="fill-accent" cx="785" cy="139" r="4" />
-          <circle className="fill-accent" cx="239" cy="268" r="4" />
+          <circle className="fill-primary" cx="317" cy="66" r="4" />
+          <circle className="fill-primary" cx="785" cy="139" r="4" />
+          <circle className="fill-primary" cx="239" cy="268" r="4" />
         </svg>
         {cards.map((card) => (
           <div
@@ -51,7 +51,7 @@ export function ReviewIllustration() {
           >
             <div className="flex items-center gap-3 text-[13px] leading-[1.4] font-[650] whitespace-nowrap compact:gap-1.75 compact:text-[10px]">
               <span
-                className={`grid size-9.5 shrink-0 place-items-center rounded-[10px] compact:size-6.75 compact:rounded-[7px] ${card.name === "review" ? "bg-accent text-surface" : "bg-accent-soft text-accent"}`}
+                className={`grid size-9.5 shrink-0 place-items-center rounded-[10px] compact:size-6.75 compact:rounded-[7px] ${card.name === "review" ? "bg-primary text-primary-foreground" : "bg-accent-soft text-primary"}`}
               >
                 <svg
                   className="size-5 stroke-current stroke-[1.5] compact:size-4"
@@ -70,11 +70,11 @@ export function ReviewIllustration() {
                 {Array.from({ length: 14 }, (_, day) => (
                   <span
                     key={day}
-                    className={`grid aspect-square place-items-center rounded-[5px] compact:rounded-[3px] ${day === 10 ? "bg-accent" : day >= 7 && day <= 9 ? "bg-accent-soft" : "bg-[#f0f3f9]"}`}
+                    className={`grid aspect-square place-items-center rounded-[5px] compact:rounded-[3px] ${day === 10 ? "bg-primary" : day >= 7 && day <= 9 ? "bg-accent-soft" : "bg-muted"}`}
                   >
                     {day === 10 && (
                       <svg
-                        className="size-4.25 stroke-surface stroke-2 compact:size-3"
+                        className="size-4.25 stroke-primary-foreground stroke-2 compact:size-3"
                         viewBox="0 0 24 24"
                         fill="none"
                         strokeLinecap="round"
@@ -91,17 +91,17 @@ export function ReviewIllustration() {
                 {[0, 1].map((row) => (
                   <div key={row} className="flex items-center gap-3 compact:gap-2">
                     <span
-                      className={`size-6.75 shrink-0 rounded-[7px] compact:size-5 compact:rounded-[5px] ${card.name === "review" && row === 0 ? "bg-[#dfe9ff]" : "bg-[#eef2f9]"}`}
+                      className={`size-6.75 shrink-0 rounded-[7px] compact:size-5 compact:rounded-[5px] ${card.name === "review" && row === 0 ? "bg-accent" : "bg-muted"}`}
                     />
                     <div
                       className={`grid gap-1.75 compact:gap-1.25 ${row === 0 ? "w-28 compact:w-16.75" : "w-21.5 compact:w-12"}`}
                     >
-                      <span className="h-1.5 rounded-lg bg-[#e6eaf1] compact:h-1.25" />
-                      <span className="h-1.25 w-[58%] rounded-lg bg-[#f0f3f8] compact:h-1" />
+                      <span className="h-1.5 rounded-lg bg-border compact:h-1.25" />
+                      <span className="h-1.25 w-[58%] rounded-lg bg-muted compact:h-1" />
                     </div>
                     {card.name === "review" && row === 0 && (
                       <svg
-                        className="ml-auto size-5.5 shrink-0 rounded-full bg-accent stroke-surface stroke-2 p-0.75 compact:size-4.75"
+                        className="ml-auto size-5.5 shrink-0 rounded-full bg-primary stroke-primary-foreground stroke-2 p-0.75 compact:size-4.75"
                         viewBox="0 0 24 24"
                         fill="none"
                         strokeLinecap="round"

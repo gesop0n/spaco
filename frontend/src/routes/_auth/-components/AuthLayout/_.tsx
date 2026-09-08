@@ -13,7 +13,7 @@ export function AuthLayout({ children }: { children: ReactNode }) {
               className="inline-block rounded-sm font-brand text-[64px] leading-none font-[750] tracking-[-0.065em] phone:text-[52px]"
               aria-label="spaco トップページ"
             >
-              spaco<span className="text-accent">.</span>
+              spaco<span className="text-primary">.</span>
             </Link>
           </div>
           {children}
