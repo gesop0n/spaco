@@ -16,7 +16,7 @@ import (
 type ResolveUserFunc func(context.Context, string, string) (identifier.UserID, error)
 
 // Moduleは、組み立て済みaccount moduleの公開窓口である。
-// applicationやrepositoryの具象型はmodule外へ公開しない。
+// use caseやrepositoryの具象型はmodule外へ公開しない。
 type Module struct {
 	handler     accountv1connect.AccountServiceHandler
 	resolveUser ResolveUserFunc

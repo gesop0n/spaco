@@ -9,25 +9,33 @@ import (
 	"github.com/gesop0n/spaco/backend/internal/modules/account"
 	"github.com/gesop0n/spaco/backend/internal/modules/account/internal/adapter/postgres"
 	"github.com/gesop0n/spaco/backend/internal/modules/account/internal/adapter/rpc"
-	"github.com/gesop0n/spaco/backend/internal/modules/account/internal/application"
+	"github.com/gesop0n/spaco/backend/internal/modules/account/internal/usecase"
 )
 
-// Newは、PostgreSQL repository、application service、ConnectRPC handlerを接続する。
+// Newは、PostgreSQL repository、use case、ConnectRPC handlerを接続する。
 func New(pool *pgxpool.Pool) (*account.Module, error) {
 	repository, err := postgres.NewRepository(pool)
 	if err != nil {
 		return nil, fmt.Errorf("create account module: %w", err)
 	}
-	service, err := application.NewService(repository)
+	resolveUser, err := usecase.NewResolveUser(repository)
 	if err != nil {
 		return nil, fmt.Errorf("create account module: %w", err)
 	}
-	handler, err := rpc.NewHandler(service)
+	getCurrentAccount, err := usecase.NewGetCurrentAccount(repository)
+	if err != nil {
+		return nil, fmt.Errorf("create account module: %w", err)
+	}
+	updateProfile, err := usecase.NewUpdateProfile(repository)
+	if err != nil {
+		return nil, fmt.Errorf("create account module: %w", err)
+	}
+	handler, err := rpc.NewHandler(getCurrentAccount, updateProfile)
 	if err != nil {
 		return nil, fmt.Errorf("create account module: %w", err)
 	}
 
-	module, err := account.NewModule(handler, service.ResolveUser)
+	module, err := account.NewModule(handler, resolveUser.Execute)
 	if err != nil {
 		return nil, fmt.Errorf("create account module: %w", err)
 	}

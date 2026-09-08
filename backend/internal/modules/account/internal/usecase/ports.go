@@ -1,5 +1,5 @@
-// Package application は、account moduleのユースケースと必要なportを定義する。
-package application
+// Package usecase は、account moduleのユースケースと必要なportを定義する。
+package usecase
 
 import (
 	"context"
@@ -8,14 +8,20 @@ import (
 	"github.com/gesop0n/spaco/backend/internal/shared/identifier"
 )
 
-// IAccountRepositoryは、Accountの永続化に必要な操作だけを表すinterfaceである。
-// PostgreSQL固有の型をapplication層へ持ち込まない。
-type IAccountRepository interface {
+// PostgreSQL固有の型は、いずれのrepository interfaceにも持ち込まない。
+
+type IResolveUserRepository interface {
 	ResolveOrCreateByAuthIdentity(
 		context.Context,
 		domain.AuthIdentity,
 	) (identifier.UserID, error)
+}
+
+type IGetCurrentAccountRepository interface {
 	FindByID(context.Context, identifier.UserID) (domain.Account, error)
+}
+
+type IUpdateProfileRepository interface {
 	UpdateProfile(
 		context.Context,
 		identifier.UserID,

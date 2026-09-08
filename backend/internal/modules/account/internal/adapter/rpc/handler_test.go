@@ -13,25 +13,28 @@ import (
 	"github.com/gesop0n/spaco/backend/internal/shared/identifier"
 )
 
-type accountServiceStub struct {
-	get    func(context.Context, identifier.UserID) (domain.Account, error)
-	update func(context.Context, identifier.UserID, string, string) (domain.Account, error)
+type getCurrentAccountUseCaseStub struct {
+	execute func(context.Context, identifier.UserID) (domain.Account, error)
 }
 
-func (s accountServiceStub) GetCurrentAccount(
+func (s getCurrentAccountUseCaseStub) Execute(
 	ctx context.Context,
 	userID identifier.UserID,
 ) (domain.Account, error) {
-	return s.get(ctx, userID)
+	return s.execute(ctx, userID)
 }
 
-func (s accountServiceStub) UpdateProfile(
+type updateProfileUseCaseStub struct {
+	execute func(context.Context, identifier.UserID, string, string) (domain.Account, error)
+}
+
+func (s updateProfileUseCaseStub) Execute(
 	ctx context.Context,
 	userID identifier.UserID,
 	atCoderID string,
 	timeZone string,
 ) (domain.Account, error) {
-	return s.update(ctx, userID, atCoderID, timeZone)
+	return s.execute(ctx, userID, atCoderID, timeZone)
 }
 
 func TestHandlerGetCurrentAccountReturnsAuthenticatedUser(t *testing.T) {
@@ -43,14 +46,17 @@ func TestHandlerGetCurrentAccountReturnsAuthenticatedUser(t *testing.T) {
 	if err != nil {
 		t.Fatalf("RehydrateAccount() error = %v", err)
 	}
-	handler, err := NewHandler(accountServiceStub{
-		get: func(_ context.Context, gotUserID identifier.UserID) (domain.Account, error) {
-			if gotUserID != userID {
-				t.Fatalf("userID = %v, want %v", gotUserID, userID)
-			}
-			return account, nil
+	handler, err := NewHandler(
+		getCurrentAccountUseCaseStub{
+			execute: func(_ context.Context, gotUserID identifier.UserID) (domain.Account, error) {
+				if gotUserID != userID {
+					t.Fatalf("userID = %v, want %v", gotUserID, userID)
+				}
+				return account, nil
+			},
 		},
-	})
+		updateProfileUseCaseStub{},
+	)
 	if err != nil {
 		t.Fatalf("NewHandler() error = %v", err)
 	}
@@ -74,7 +80,7 @@ func TestHandlerGetCurrentAccountReturnsAuthenticatedUser(t *testing.T) {
 func TestHandlerGetCurrentAccountRejectsMissingUser(t *testing.T) {
 	t.Parallel()
 
-	handler, err := NewHandler(accountServiceStub{})
+	handler, err := NewHandler(getCurrentAccountUseCaseStub{}, updateProfileUseCaseStub{})
 	if err != nil {
 		t.Fatalf("NewHandler() error = %v", err)
 	}
@@ -88,11 +94,14 @@ func TestHandlerGetCurrentAccountRejectsMissingUser(t *testing.T) {
 func TestHandlerUpdateProfileMapsDomainError(t *testing.T) {
 	t.Parallel()
 
-	handler, err := NewHandler(accountServiceStub{
-		update: func(context.Context, identifier.UserID, string, string) (domain.Account, error) {
-			return domain.Account{}, domain.ErrInvalidTimeZone
+	handler, err := NewHandler(
+		getCurrentAccountUseCaseStub{},
+		updateProfileUseCaseStub{
+			execute: func(context.Context, identifier.UserID, string, string) (domain.Account, error) {
+				return domain.Account{}, domain.ErrInvalidTimeZone
+			},
 		},
-	})
+	)
 	if err != nil {
 		t.Fatalf("NewHandler() error = %v", err)
 	}

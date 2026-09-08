@@ -20,14 +20,14 @@
 
 JWTやCookieの検証は技術的な認証処理であり、`account` のドメインルールではない。
 そのため、外部認証との接続と認証処理のオーケストレーションは
-`authentication` application moduleが担当する。
+`authentication` moduleが担当する。
 
 認証処理は次のように分担する。
 
 1. `authentication` のRPC adapterがAuthorization headerからトークンを取得する。
 2. `authentication` のSupabase adapterが署名、issuer、audience、有効期限を検証する。
-3. `authentication` applicationが検証済みの `issuer + subject` を
-   `account` のapplication層へ渡す。
+3. `authentication` use caseが検証済みの `issuer + subject` を
+   `account` のuse caseへ渡す。
 4. `account` が対応する `identifier.UserID` を解決する。
 5. `authentication` のRPC adapterが `UserID` をcontextに載せる。
 
@@ -47,9 +47,11 @@ internal/
 ├── domain/
 │   ├── account.go
 │   └── auth_identity.go
-├── application/
+├── usecase/
 │   ├── ports.go
-│   └── service.go
+│   ├── resolve_user.go
+│   ├── get_current_account.go
+│   └── update_profile.go
 └── adapter/
     ├── rpc/handler.go
     └── postgres/
@@ -90,7 +92,7 @@ type Account struct {
 
 提出履歴を参照する対象を表す値オブジェクト。空文字や文字数など、確認できた
 AtCoderの制約だけを生成時に検証する。外部APIへの問い合わせが必要な存在確認は
-値オブジェクトでは行わず、application 層から port を介して実行する。
+値オブジェクトでは行わず、use caseからportを介して実行する。
 
 AtCoder ID を一意にするかどうかは、本人確認済みアカウントだけを扱うのか、単に
 参照したいIDを登録できるのかというプロダクト要件を決めてから判断する。
@@ -100,7 +102,7 @@ AtCoder ID を一意にするかどうかは、本人確認済みアカウント
 ユーザーの日付境界や表示時刻に利用するタイムゾーン。`Asia/Tokyo` のような
 IANA Time Zone Database の名前として生成時に検証する。
 
-## application 層のユースケース
+## use case
 
 ### `ResolveUser`
 
@@ -118,7 +120,7 @@ domain型をProtobuf型へ変換し、repositoryやdomainを通信契約へ依�
 AtCoder IDとIANA形式のタイムゾーンをdomain層で検証してから保存する。更新後のAccountを
 返し、client側は`GetCurrentAccount`のQuery cacheを再取得する。
 
-application 層が必要とする repository interface は利用側で定義し、具体的なSQLや
+use caseが必要とするrepository interfaceは利用側で定義し、具体的なSQLや
 DBライブラリの型は `adapter/postgres` に閉じ込める。
 
 PostgreSQL adapterではSQLを`queries`へ定義し、sqlcが生成した`sqlc.Queries`を

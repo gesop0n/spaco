@@ -1,4 +1,4 @@
-// Package postgres は、account applicationが要求するrepositoryをPostgreSQLで実装する。
+// Package postgres は、account usecaseが要求するrepositoryをPostgreSQLで実装する。
 package postgres
 
 import (
@@ -11,8 +11,8 @@ import (
 	"github.com/jackc/pgx/v5/pgxpool"
 
 	accountsqlc "github.com/gesop0n/spaco/backend/internal/modules/account/internal/adapter/postgres/sqlc"
-	"github.com/gesop0n/spaco/backend/internal/modules/account/internal/application"
 	"github.com/gesop0n/spaco/backend/internal/modules/account/internal/domain"
+	"github.com/gesop0n/spaco/backend/internal/modules/account/internal/usecase"
 	"github.com/gesop0n/spaco/backend/internal/shared/identifier"
 )
 
@@ -21,7 +21,11 @@ type Repository struct {
 	queries *accountsqlc.Queries
 }
 
-var _ application.IAccountRepository = (*Repository)(nil)
+var (
+	_ usecase.IResolveUserRepository       = (*Repository)(nil)
+	_ usecase.IGetCurrentAccountRepository = (*Repository)(nil)
+	_ usecase.IUpdateProfileRepository     = (*Repository)(nil)
+)
 
 func NewRepository(pool *pgxpool.Pool) (*Repository, error) {
 	if pool == nil {
@@ -115,7 +119,7 @@ func (r *Repository) FindByID(
 ) (domain.Account, error) {
 	row, err := r.queries.FindAccountByID(ctx, userID.UUID())
 	if errors.Is(err, pgx.ErrNoRows) {
-		return domain.Account{}, application.ErrAccountNotFound
+		return domain.Account{}, usecase.ErrAccountNotFound
 	}
 	if err != nil {
 		return domain.Account{}, fmt.Errorf("find account by id: %w", err)
@@ -138,7 +142,7 @@ func (r *Repository) UpdateProfile(
 		},
 	)
 	if errors.Is(err, pgx.ErrNoRows) {
-		return domain.Account{}, application.ErrAccountNotFound
+		return domain.Account{}, usecase.ErrAccountNotFound
 	}
 	if err != nil {
 		return domain.Account{}, fmt.Errorf("update account profile: %w", err)

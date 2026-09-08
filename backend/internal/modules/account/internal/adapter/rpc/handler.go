@@ -8,27 +8,41 @@ import (
 	"connectrpc.com/connect"
 
 	accountv1 "github.com/gesop0n/spaco/backend/generated/spaco/account/v1"
-	"github.com/gesop0n/spaco/backend/internal/modules/account/internal/application"
 	"github.com/gesop0n/spaco/backend/internal/modules/account/internal/domain"
+	"github.com/gesop0n/spaco/backend/internal/modules/account/internal/usecase"
 	"github.com/gesop0n/spaco/backend/internal/modules/authentication"
 	"github.com/gesop0n/spaco/backend/internal/shared/identifier"
 )
 
-// IAccountServiceは、RPC adapterが必要とするAccount操作を表すinterfaceである。
-type IAccountService interface {
-	GetCurrentAccount(context.Context, identifier.UserID) (domain.Account, error)
-	UpdateProfile(context.Context, identifier.UserID, string, string) (domain.Account, error)
+// IGetCurrentAccountUseCaseは、RPC adapterが必要とするAccount参照を表すinterfaceである。
+type IGetCurrentAccountUseCase interface {
+	Execute(context.Context, identifier.UserID) (domain.Account, error)
+}
+
+// IUpdateProfileUseCaseは、RPC adapterが必要とするプロフィール更新を表すinterfaceである。
+type IUpdateProfileUseCase interface {
+	Execute(context.Context, identifier.UserID, string, string) (domain.Account, error)
 }
 
 type Handler struct {
-	service IAccountService
+	getCurrentAccount IGetCurrentAccountUseCase
+	updateProfile     IUpdateProfileUseCase
 }
 
-func NewHandler(service IAccountService) (*Handler, error) {
-	if service == nil {
-		return nil, errors.New("create account handler: service is required")
+func NewHandler(
+	getCurrentAccount IGetCurrentAccountUseCase,
+	updateProfile IUpdateProfileUseCase,
+) (*Handler, error) {
+	if getCurrentAccount == nil {
+		return nil, errors.New("create account handler: get current account use case is required")
 	}
-	return &Handler{service: service}, nil
+	if updateProfile == nil {
+		return nil, errors.New("create account handler: update profile use case is required")
+	}
+	return &Handler{
+		getCurrentAccount: getCurrentAccount,
+		updateProfile:     updateProfile,
+	}, nil
 }
 
 func (h *Handler) GetCurrentAccount(
@@ -40,7 +54,7 @@ func (h *Handler) GetCurrentAccount(
 		return nil, err
 	}
 
-	account, err := h.service.GetCurrentAccount(ctx, userID)
+	account, err := h.getCurrentAccount.Execute(ctx, userID)
 	if err != nil {
 		return nil, connectError(err)
 	}
@@ -61,7 +75,7 @@ func (h *Handler) UpdateProfile(
 		return nil, connect.NewError(connect.CodeInvalidArgument, errors.New("request is required"))
 	}
 
-	account, err := h.service.UpdateProfile(
+	account, err := h.updateProfile.Execute(
 		ctx,
 		userID,
 		request.Msg.GetAtcoderId(),
@@ -106,7 +120,7 @@ func connectError(err error) *connect.Error {
 		return connect.NewError(connect.CodeDeadlineExceeded, context.DeadlineExceeded)
 	case errors.Is(err, domain.ErrInvalidAtCoderID), errors.Is(err, domain.ErrInvalidTimeZone):
 		return connect.NewError(connect.CodeInvalidArgument, errors.New("invalid profile"))
-	case errors.Is(err, application.ErrAccountNotFound):
+	case errors.Is(err, usecase.ErrAccountNotFound):
 		return connect.NewError(connect.CodeNotFound, errors.New("account not found"))
 	default:
 		// DBや内部構造の詳細はclientへ公開しない。
