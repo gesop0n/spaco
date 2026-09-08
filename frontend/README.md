@@ -37,6 +37,7 @@ VITE_SUPABASE_PUBLISHABLE_KEY=your-publishable-key
 
 ```sh
 pnpm --dir frontend build
+pnpm --dir frontend test
 pnpm --dir frontend lint
 pnpm --dir frontend fmt:check
 ```
@@ -51,9 +52,11 @@ pnpm --dir frontend fmt:check
 - `src/routes/_auth/-components/`：認証画面のレイアウト、フォーム、入力チェック。
 - `src/routes/_authenticated.tsx`：session・accountを確認する認証済みパスレスルート。
 - `src/routes/_authenticated/app.tsx`・`mypage.tsx`・`profile.tsx`：Welcome、マイページ、プロフィール設定ルート。
+- `src/routes/_authenticated/problems.tsx`・`reviews.tsx`・`review-list.tsx`：問題登録、今日の復習、復習リストのUIプレビュー。
+- `src/routes/_authenticated/-components/ReviewWorkspace/`：プレビュー専用のサンプル・状態・仮の予定計算。APIには接続しません。
 - `src/components/AuthProvider/`：Supabase sessionの初期取得と変更監視。
 - `src/components/AppLayout/`：認証済み画面の共通レイアウト。Aurora背景とSidebarProvider。
-- `src/components/AppSidebar/`：shadcn Sidebarを使った共通ナビゲーション、下部の開閉ボタン、アカウントのDropdown Menu。
+- `src/components/AppSidebar/`：shadcn Sidebarを使った共通ナビゲーション、境界中央の開閉ボタン、アカウントのDropdown Menu。
 - `src/lib/connect/`：Connect transport、Bearer token付与、RPCエラー判定。
 - `src/lib/query/`：アプリ全体で共有するTanStack QueryClient。
 - `src/components/PageBackground/`：差し替え可能な6種類の背景。
@@ -65,13 +68,29 @@ pnpm --dir frontend fmt:check
 
 ## サイドバー
 
-認証済みパスレスルートで `AppLayout` を使用し、`/app`、`/mypage`、`/profile` に同じサイドバーを表示します。開閉操作はサイドバー下部に集約し、PCではアイコンだけに折りたためます。AppLayoutのヘッダーとロゴ横には開閉ボタンを置きません。モバイルでサイドバーを閉じている間は、AppSidebarが画面左下に開くボタンを表示します。リンク先へ移動するとモバイルメニューは閉じます。
+認証済みパスレスルートで `AppLayout` を使用し、`/app`、`/mypage`、`/profile` に同じサイドバーを表示します。開閉ボタンはサイドバーと本文の境界中央に置き、矢印アイコンだけで表示します。PCではホバー・フォーカス時に操作名をツールチップで確認でき、アイコンだけのサイドバーに折りたためます。AppLayout・ロゴ横・下部のアカウント領域には開閉ボタンを置きません。モバイルで閉じている間は画面左端の中央に開くボタンを表示します。リンク先へ移動するとモバイルメニューは閉じます。
 
-ロゴと「Welcome」は仮のホーム画面 `/app` へ移動します。「今日の復習」「問題を探す」「復習リスト」はまだ画面がないため、準備中の無効項目として表示します。画面を追加したら `AppSidebar/_.tsx` の項目をTanStack Routerの `Link` に接続します。
+ロゴと「Welcome」は仮のホーム画面 `/app` へ移動します。「今日の復習」は `/reviews`、「問題を登録」は `/problems`、「復習リスト」は `/review-list` のUIプレビューに移動します。これらの認証済み画面も同じサイドバーを使い、Welcomeのカードからも開けます。
 
 一番下のアカウントボタンを押すと [shadcn Dropdown Menu](https://ui.shadcn.com/docs/components/base/dropdown-menu) が開き、「マイページ」と「ログアウト」を選べます。折りたたみ中もアバターから同じメニューを開けます。ログアウト処理中はメニュー項目を無効化します。セッションを維持したまま処理が失敗した場合はメニュー内で再試行でき、Supabase側でセッションが破棄された場合は認証ガードがログイン画面へ戻します。サイドバーにはプロフィール編集への直接リンクを置きません。
 
 `AppSidebar` を個別に使用する場合は、認証済みの `AuthProvider`・Connect Query環境と `SidebarProvider` の内側に置きます。[shadcn Sidebar](https://ui.shadcn.com/docs/components/base/sidebar)のBase UI版を使用しているため、リンクの合成には `render={<Link ... />}` を使います。
+
+## 問題登録・復習のUIプレビュー
+
+学習データはサンプルです。登録・記録・一時停止は認証済みレイアウト内のReact Contextで画面間共有し、再読み込み・ログアウト・別アカウントへの切り替えでリセットします。学習API・ブラウザストレージには保存しません。認証・プロフィールは従来どおり実際のAPIを使用します。
+
+- `/problems`：コンテストから複数問を選択、またはAtCoderのHTTPS問題URLで登録。重複を除外し、初回予定をアカウントのタイムゾーンで翌日に設定します。登録は復習回数に含めません。
+- `/reviews`：期限超過を含む今日の問題を古い予定日順に表示。「取り組む」で右側のSheetを開き、問題へのリンク・結果3択・実施日時・任意メモを表示します。記録後は次回予定を確認できます。
+- `/review-list`：登録済み問題の検索、復習中／一時停止の絞り込み、登録メモ・復習履歴の確認。一時停止・再開は履歴と予定を保持します。予定日前の問題にも取り組めます。
+
+次回予定はUI確認用の仮ルール（実施日から、自力AC：7日後、解説・ヒントありAC：3日後、ACできなかった：翌日）です。実際の復習間隔計算ではありません。未来・登録日より前の実施日時は拒否します。期限超過だけで失敗扱いにはしません。
+
+コンテスト検索のサンプルは [ABC350](https://atcoder.jp/contests/abc350/tasks)、[ABC351](https://atcoder.jp/contests/abc351/tasks)、[ABC352](https://atcoder.jp/contests/abc352/tasks) のA〜Dです。問題名以外の学習状態・履歴は架空です。提出同期・AC確認・問題の存在確認・外部カタログ取得は未接続です。サンプル外のURLは問題IDを仮のタイトルに使います。
+
+テストは対象ファイルと同じディレクトリ内の `__test__/` に配置します。たとえば `ReviewWorkspace/model.ts` のテストは `ReviewWorkspace/__test__/model.test.ts` です。`pnpm --dir frontend test` は各 `__test__/*.test.ts` をNode.js標準のテスト機能で実行し、日付・URL検証・重複登録・仮の予定計算・履歴・一時停止の状態遷移を確認します。
+
+テストはアプリの型設定から除外し、`tsconfig.test.json` のNode.js用の型設定で確認します。`pnpm --dir frontend build` ではテストも含めて型チェックします。
 
 ## Aurora カラープリセット
 
