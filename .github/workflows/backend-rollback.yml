@@ -16,18 +16,18 @@ concurrency:
   group: backend-production
   cancel-in-progress: false
 
-env:
-  PROJECT_ID: spaco-prod
-  REGION: asia-northeast1
-  CLOUD_RUN_SERVICE: spaco-api
-  WORKLOAD_IDENTITY_PROVIDER: projects/237242555322/locations/global/workloadIdentityPools/github-actions/providers/github
-  DEPLOYER_SERVICE_ACCOUNT: spaco-api-deployer@spaco-prod.iam.gserviceaccount.com
-
 jobs:
   rollback:
     runs-on: ubuntu-latest
     timeout-minutes: 10
-    environment: production
+    environment: Production
+    env:
+      PROJECT_ID: ${{ vars.PROJECT_ID }}
+      REGION: ${{ vars.REGION }}
+      CLOUD_RUN_SERVICE: ${{ vars.CLOUD_RUN_SERVICE }}
+      CLOUD_RUN_SERVICE_URL: ${{ vars.CLOUD_RUN_SERVICE_URL }}
+      WORKLOAD_IDENTITY_PROVIDER: ${{ vars.WORKLOAD_IDENTITY_PROVIDER }}
+      DEPLOYER_SERVICE_ACCOUNT: ${{ vars.DEPLOYER_SERVICE_ACCOUNT }}
 
     steps:
       - name: Checkout
@@ -76,4 +76,4 @@ jobs:
             --quiet
 
       - name: Verify production
-        run: curl --fail --show-error --silent --retry 5 --retry-all-errors --retry-delay 2 "https://spaco-api-5n3rhvlcxa-an.a.run.app/health"
+        run: curl --fail --show-error --silent --retry 5 --retry-all-errors --retry-delay 2 "${CLOUD_RUN_SERVICE_URL}/health"

@@ -28,7 +28,7 @@ resource "google_iam_workload_identity_pool_provider" "github" {
   project                            = var.project_id
   workload_identity_pool_id          = google_iam_workload_identity_pool.github.workload_identity_pool_id
   workload_identity_pool_provider_id = var.workload_identity_provider_id
-  display_name                       = "${var.github_repository} production"
+  display_name                       = "${var.github_repository} ${var.github_environment}"
   description                        = "GitHub OIDC provider restricted to the production branch and environment"
 
   attribute_mapping = {
