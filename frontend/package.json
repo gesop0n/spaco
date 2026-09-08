@@ -13,6 +13,7 @@
     "fmt:check": "oxfmt --check",
     "preview": "pnpm run build && vite preview",
     "deploy": "pnpm run build && wrangler deploy",
+    "deploy:built": "wrangler deploy",
     "cf-typegen": "wrangler types"
   },
   "dependencies": {
@@ -52,5 +53,6 @@
     "typescript": "~6.0.2",
     "vite": "^8.2.2",
     "wrangler": "^4.129.0"
-  }
+  },
+  "packageManager": "pnpm@11.25.0"
 }

@@ -42,6 +42,36 @@ pnpm --dir frontend lint
 pnpm --dir frontend fmt:check
 ```
 
+## Cloudflare Workersへのデプロイ
+
+Cloudflare Workers BuildsでGitリポジトリを接続し、次の値を設定します。
+
+| 設定                                 | 値                                   |
+| ------------------------------------ | ------------------------------------ |
+| Production branch                    | `main`                               |
+| Root directory                       | `frontend`                           |
+| Build command                        | `pnpm run build`                     |
+| Deploy command                       | `pnpm run deploy:built`              |
+| Non-production branch deploy command | `pnpm exec wrangler versions upload` |
+
+Build variablesには次の値を設定します。`VITE_`で始まる値はビルド時にブラウザ向けJavaScriptへ埋め込まれるため、秘密情報は設定しません。Supabaseのpublishable keyは公開される前提のキーです。
+
+```dotenv
+NODE_VERSION=22.23.2
+PNPM_VERSION=11.25.0
+VITE_API_BASE_URL=https://your-api.example.com
+VITE_SUPABASE_URL=https://your-project.supabase.co
+VITE_SUPABASE_PUBLISHABLE_KEY=your-publishable-key
+```
+
+ローカルから直接デプロイする場合は、Cloudflareへログインしたうえで次を実行します。
+
+```sh
+pnpm --dir frontend deploy
+```
+
+初回デプロイで発行された本番URLは、バックエンドのCORS許可originとSupabase AuthのSite URL・Redirect URLsへ設定します。
+
 ## 構成
 
 - `src/routes/__root.tsx`：共通ルートと404表示。
