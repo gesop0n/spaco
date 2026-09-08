@@ -36,6 +36,11 @@ export function useAuthVerification(): {
       redirectStartedRef.current = false;
       return;
     }
+    // 公開ページへの遷移中も旧layoutが残るため、遷移先が保護routeかを確認する。
+    const protectedRoute = router
+      .matchRoutes(currentPathname)
+      .some((match) => match.routeId === "/_authenticated");
+    if (!protectedRoute) return;
     if (redirectStartedRef.current) return;
     redirectStartedRef.current = true;
 
@@ -44,8 +49,11 @@ export function useAuthVerification(): {
     const clearRejectedSession = rpcRequiresLogin ? authState.clearSession() : Promise.resolve();
     void clearRejectedSession
       .catch(() => undefined)
-      .finally(() => router.history.replace(loginURL));
-  }, [authState, currentHref, router, rpcRequiresLogin]);
+      .finally(() => {
+        // session破棄を待つ間にログアウトなどで移動済みなら、古い遷移を実行しない。
+        if (router.history.location.href === currentHref) router.history.replace(loginURL);
+      });
+  }, [authState, currentHref, currentPathname, router, rpcRequiresLogin]);
 
   useEffect(() => {
     if (needsProfileSetup && currentPathname !== "/profile") {
