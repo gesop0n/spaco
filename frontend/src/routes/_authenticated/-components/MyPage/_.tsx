@@ -31,6 +31,8 @@ export function MyPage() {
           <dl className="grid grid-cols-[auto_minmax(0,1fr)] gap-x-6 gap-y-5 text-sm">
             <dt className="text-muted-foreground">ユーザー名</dt>
             <dd className="break-all">{account?.username ?? "未設定"}</dd>
+            <dt className="text-muted-foreground">メールアドレス</dt>
+            <dd className="break-all">{account?.email || "未設定"}</dd>
             <dt className="text-muted-foreground">AtCoder ID</dt>
             <dd className="break-all">{account?.atcoderId ?? "未設定"}</dd>
             <dt className="text-muted-foreground">タイムゾーン</dt>
