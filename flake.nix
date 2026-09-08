@@ -11,7 +11,10 @@
     flake-utils.lib.eachDefaultSystem (
       system:
       let
-        pkgs = import nixpkgs { inherit system; };
+        pkgs = import nixpkgs {
+          inherit system;
+          config.allowUnfreePredicate = pkg: builtins.elem (nixpkgs.lib.getName pkg) [ "terraform" ];
+        };
 
       in
       {
@@ -23,6 +26,7 @@
             pkgs.nodejs_22
             pkgs.pnpm_11
             pkgs.google-cloud-sdk
+            pkgs.terraform
 
             # Backend
             pkgs.go_1_25
