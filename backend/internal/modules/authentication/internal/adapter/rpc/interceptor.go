@@ -10,7 +10,7 @@ import (
 	"connectrpc.com/connect"
 
 	"github.com/gesop0n/spaco/backend/internal/modules/authentication"
-	"github.com/gesop0n/spaco/backend/internal/modules/authentication/internal/application"
+	"github.com/gesop0n/spaco/backend/internal/modules/authentication/internal/usecase"
 	"github.com/gesop0n/spaco/backend/internal/shared/identifier"
 )
 
@@ -19,16 +19,15 @@ var (
 	ErrMalformedBearerToken = errors.New("authorization header must contain one bearer token")
 )
 
-// IAuthenticatorは、access tokenからアプリ内UserIDを認証するinterfaceである。
-// application.Serviceがこのinterfaceを実装する。
-type IAuthenticator interface {
-	Authenticate(context.Context, string) (identifier.UserID, error)
+// IAuthenticateUseCaseは、access tokenからアプリ内UserIDを認証するinterfaceである。
+type IAuthenticateUseCase interface {
+	Execute(context.Context, string) (identifier.UserID, error)
 }
 
-// AuthenticatorFuncは、関数をIAuthenticatorとして利用できるようにするadapterである。
-type AuthenticatorFunc func(context.Context, string) (identifier.UserID, error)
+// AuthenticateUseCaseFuncは、関数をIAuthenticateUseCaseとして利用できるようにするadapterである。
+type AuthenticateUseCaseFunc func(context.Context, string) (identifier.UserID, error)
 
-func (f AuthenticatorFunc) Authenticate(
+func (f AuthenticateUseCaseFunc) Execute(
 	ctx context.Context,
 	token string,
 ) (identifier.UserID, error) {
@@ -36,19 +35,19 @@ func (f AuthenticatorFunc) Authenticate(
 }
 
 type authInterceptor struct {
-	authenticator IAuthenticator
+	authenticateUseCase IAuthenticateUseCase
 }
 
 var _ connect.Interceptor = (*authInterceptor)(nil)
 
 // NewAuthInterceptorは、unary RPCとstreaming RPCのhandlerを認証で保護する。
 // アプリ内ユーザーの認証が必要なprocedureにだけ適用する。
-func NewAuthInterceptor(authenticator IAuthenticator) (connect.Interceptor, error) {
-	if authenticator == nil {
-		return nil, errors.New("create auth interceptor: authenticator is required")
+func NewAuthInterceptor(authenticate IAuthenticateUseCase) (connect.Interceptor, error) {
+	if authenticate == nil {
+		return nil, errors.New("create auth interceptor: authenticate use case is required")
 	}
 
-	return &authInterceptor{authenticator: authenticator}, nil
+	return &authInterceptor{authenticateUseCase: authenticate}, nil
 }
 
 func (i *authInterceptor) WrapUnary(next connect.UnaryFunc) connect.UnaryFunc {
@@ -88,12 +87,12 @@ func (i *authInterceptor) authenticate(
 		return nil, unauthenticatedError(err)
 	}
 
-	userID, err := i.authenticator.Authenticate(ctx, token)
+	userID, err := i.authenticateUseCase.Execute(ctx, token)
 	if err != nil {
 		if contextError := connectContextError(err); contextError != nil {
 			return nil, contextError
 		}
-		if errors.Is(err, application.ErrInvalidToken) {
+		if errors.Is(err, usecase.ErrInvalidToken) {
 			return nil, unauthenticatedError(err)
 		}
 		return nil, connect.NewError(

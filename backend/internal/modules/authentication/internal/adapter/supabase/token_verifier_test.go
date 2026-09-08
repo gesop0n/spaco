@@ -18,7 +18,7 @@ import (
 	"github.com/lestrrat-go/jwx/v3/jwk"
 	"github.com/lestrrat-go/jwx/v3/jwt"
 
-	"github.com/gesop0n/spaco/backend/internal/modules/authentication/internal/application"
+	"github.com/gesop0n/spaco/backend/internal/modules/authentication/internal/usecase"
 )
 
 func TestTokenVerifier(t *testing.T) {
@@ -113,7 +113,7 @@ func TestTokenVerifier(t *testing.T) {
 		t.Run(test.name, func(t *testing.T) {
 			rawToken := signTestToken(t, privateKey, test.claims)
 			_, err := verifier.Verify(context.Background(), rawToken)
-			if !errors.Is(err, application.ErrInvalidToken) {
+			if !errors.Is(err, usecase.ErrInvalidToken) {
 				t.Fatalf("Verify() error = %v, want ErrInvalidToken", err)
 			}
 		})
@@ -121,7 +121,7 @@ func TestTokenVerifier(t *testing.T) {
 
 	for _, rawToken := range []string{"", "not-a-jwt"} {
 		_, err := verifier.Verify(context.Background(), rawToken)
-		if !errors.Is(err, application.ErrInvalidToken) {
+		if !errors.Is(err, usecase.ErrInvalidToken) {
 			t.Fatalf("Verify(%q) error = %v, want ErrInvalidToken", rawToken, err)
 		}
 	}
@@ -157,7 +157,7 @@ func TestTokenVerifierRejectsWrongSignature(t *testing.T) {
 		issuer: issuer, subject: "external-user-id", audience: DefaultAudience,
 		expiration: time.Now().Add(time.Hour),
 	}
-	if _, err := verifier.Verify(context.Background(), signTestToken(t, untrustedKey, claims)); !errors.Is(err, application.ErrInvalidToken) {
+	if _, err := verifier.Verify(context.Background(), signTestToken(t, untrustedKey, claims)); !errors.Is(err, usecase.ErrInvalidToken) {
 		t.Fatalf("Verify(untrusted token) error = %v, want ErrInvalidToken", err)
 	}
 	if _, err := verifier.Verify(context.Background(), signTestToken(t, trustedKey, claims)); err != nil {

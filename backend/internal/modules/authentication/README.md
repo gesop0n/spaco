@@ -15,7 +15,7 @@ Authorization header
 RPC adapter ── Bearer tokenを抽出
         │
         ▼
-application.Service.Authenticate
+usecase.Authenticate.Execute
         │
         ├── ITokenVerifier
         │      └── Supabase JWT・JWKS検証
@@ -40,7 +40,7 @@ authentication/
 ├── factory/
 │   └── factory.go          # use caseとadapterの組み立て
 └── internal/
-    ├── application/
+    ├── usecase/
     │   ├── authenticate.go # 認証use case
     │   ├── identity.go     # module内部の外部認証identity
     │   └── ports.go        # ITokenVerifier
@@ -53,9 +53,9 @@ authentication/
 
 ## 依存ルール
 
-- applicationはConnectRPC、JWT library、Supabase SDKへ依存しない。
+- usecaseはConnectRPC、JWT library、Supabase SDKへ依存しない。
 - Supabase adapterは`ITokenVerifier`を実装する。
-- RPC adapterはapplication serviceだけを呼び、JWTを直接解釈しない。
+- RPC adapterはAuthenticate use caseの`Execute`だけを呼び、JWTを直接解釈しない。
 - authenticationからaccountの具体型をimportしない。
 - accountは`IUserResolver`を実装し、`internal/app`がfactoryへ注入する。
 - 外部認証identityはmodule内部だけで利用し、ほかの業務moduleへ渡さない。

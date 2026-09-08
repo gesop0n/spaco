@@ -1,4 +1,4 @@
-package application
+package usecase
 
 import (
 	"context"
@@ -9,39 +9,7 @@ import (
 	"github.com/gesop0n/spaco/backend/internal/shared/identifier"
 )
 
-func TestNewIdentity(t *testing.T) {
-	t.Parallel()
-
-	identity, err := NewIdentity("  https://example.supabase.co/auth/v1/  ", " user-id ")
-	if err != nil {
-		t.Fatalf("NewIdentity() error = %v", err)
-	}
-	if identity.Issuer() != "https://example.supabase.co/auth/v1/" {
-		t.Fatalf("Issuer() = %q", identity.Issuer())
-	}
-	if identity.Subject() != "user-id" {
-		t.Fatalf("Subject() = %q", identity.Subject())
-	}
-
-	for _, test := range []struct {
-		name    string
-		issuer  string
-		subject string
-	}{
-		{name: "missing issuer", subject: "user-id"},
-		{name: "missing subject", issuer: "https://example.supabase.co/auth/v1"},
-	} {
-		t.Run(test.name, func(t *testing.T) {
-			t.Parallel()
-			_, err := NewIdentity(test.issuer, test.subject)
-			if !errors.Is(err, ErrInvalidIdentity) {
-				t.Fatalf("NewIdentity() error = %v, want ErrInvalidIdentity", err)
-			}
-		})
-	}
-}
-
-func TestServiceAuthenticate(t *testing.T) {
+func TestAuthenticateExecute(t *testing.T) {
 	t.Parallel()
 
 	identity := mustIdentity(t, "https://example.supabase.co/auth/v1", "external-user-id")
@@ -50,7 +18,7 @@ func TestServiceAuthenticate(t *testing.T) {
 	var resolvedIssuer string
 	var resolvedSubject string
 
-	service, err := NewService(
+	authenticate, err := NewAuthenticate(
 		TokenVerifierFunc(func(_ context.Context, token string) (Identity, error) {
 			verifiedToken = token
 			return identity, nil
@@ -66,15 +34,15 @@ func TestServiceAuthenticate(t *testing.T) {
 		}),
 	)
 	if err != nil {
-		t.Fatalf("NewService() error = %v", err)
+		t.Fatalf("NewAuthenticate() error = %v", err)
 	}
 
-	gotUserID, err := service.Authenticate(context.Background(), "access-token")
+	gotUserID, err := authenticate.Execute(context.Background(), "access-token")
 	if err != nil {
-		t.Fatalf("Authenticate() error = %v", err)
+		t.Fatalf("Execute() error = %v", err)
 	}
 	if gotUserID != wantUserID {
-		t.Fatalf("Authenticate() = %v, want %v", gotUserID, wantUserID)
+		t.Fatalf("Execute() = %v, want %v", gotUserID, wantUserID)
 	}
 	if verifiedToken != "access-token" {
 		t.Fatalf("verified token = %q, want access-token", verifiedToken)
@@ -90,7 +58,7 @@ func TestServiceAuthenticate(t *testing.T) {
 	}
 }
 
-func TestServiceAuthenticateErrors(t *testing.T) {
+func TestAuthenticateExecuteErrors(t *testing.T) {
 	t.Parallel()
 
 	identity := mustIdentity(t, "https://example.supabase.co/auth/v1", "external-user-id")
@@ -133,45 +101,45 @@ func TestServiceAuthenticateErrors(t *testing.T) {
 		t.Run(test.name, func(t *testing.T) {
 			t.Parallel()
 
-			service, err := NewService(test.verifier, test.resolver)
+			authenticate, err := NewAuthenticate(test.verifier, test.resolver)
 			if err != nil {
-				t.Fatalf("NewService() error = %v", err)
+				t.Fatalf("NewAuthenticate() error = %v", err)
 			}
-			_, err = service.Authenticate(context.Background(), "access-token")
+			_, err = authenticate.Execute(context.Background(), "access-token")
 			if !errors.Is(err, test.wantError) {
-				t.Fatalf("Authenticate() error = %v, want %v", err, test.wantError)
+				t.Fatalf("Execute() error = %v, want %v", err, test.wantError)
 			}
 		})
 	}
 }
 
-func TestServiceAuthenticatePreservesCanceledContext(t *testing.T) {
+func TestAuthenticateExecutePreservesCanceledContext(t *testing.T) {
 	t.Parallel()
 
 	ctx, cancel := context.WithCancel(context.Background())
 	cancel()
-	service, err := NewService(
+	authenticate, err := NewAuthenticate(
 		verifierReturning(Identity{}, errors.New("must not be called")),
 		resolverReturning(identifier.UserID{}, errors.New("must not be called")),
 	)
 	if err != nil {
-		t.Fatalf("NewService() error = %v", err)
+		t.Fatalf("NewAuthenticate() error = %v", err)
 	}
 
-	if _, err := service.Authenticate(ctx, "access-token"); !errors.Is(err, context.Canceled) {
-		t.Fatalf("Authenticate() error = %v, want context.Canceled", err)
+	if _, err := authenticate.Execute(ctx, "access-token"); !errors.Is(err, context.Canceled) {
+		t.Fatalf("Execute() error = %v, want context.Canceled", err)
 	}
 }
 
-func TestNewServiceRequiresDependencies(t *testing.T) {
+func TestNewAuthenticateRequiresDependencies(t *testing.T) {
 	t.Parallel()
 
 	identity := mustIdentity(t, "https://example.supabase.co/auth/v1", "external-user-id")
-	if _, err := NewService(nil, resolverReturning(identifier.NewUserID(), nil)); err == nil {
-		t.Fatal("NewService(nil, resolver) error = nil")
+	if _, err := NewAuthenticate(nil, resolverReturning(identifier.NewUserID(), nil)); err == nil {
+		t.Fatal("NewAuthenticate(nil, resolver) error = nil")
 	}
-	if _, err := NewService(verifierReturning(identity, nil), nil); err == nil {
-		t.Fatal("NewService(verifier, nil) error = nil")
+	if _, err := NewAuthenticate(verifierReturning(identity, nil), nil); err == nil {
+		t.Fatal("NewAuthenticate(verifier, nil) error = nil")
 	}
 }
 

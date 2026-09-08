@@ -9,7 +9,7 @@ import (
 	"connectrpc.com/connect"
 
 	"github.com/gesop0n/spaco/backend/internal/modules/authentication"
-	"github.com/gesop0n/spaco/backend/internal/modules/authentication/internal/application"
+	"github.com/gesop0n/spaco/backend/internal/modules/authentication/internal/usecase"
 	"github.com/gesop0n/spaco/backend/internal/shared/identifier"
 )
 
@@ -51,7 +51,7 @@ func TestAuthInterceptorUnary(t *testing.T) {
 
 	wantUserID := identifier.NewUserID()
 	var authenticatedToken string
-	interceptor, err := NewAuthInterceptor(AuthenticatorFunc(func(
+	interceptor, err := NewAuthInterceptor(AuthenticateUseCaseFunc(func(
 		_ context.Context,
 		token string,
 	) (identifier.UserID, error) {
@@ -108,13 +108,13 @@ func TestAuthInterceptorErrors(t *testing.T) {
 		{
 			name:        "invalid token",
 			header:      "Bearer invalid",
-			authErr:     application.ErrInvalidToken,
+			authErr:     usecase.ErrInvalidToken,
 			wantCode:    connect.CodeUnauthenticated,
 			wantMessage: "authentication required",
-			wantCause:   application.ErrInvalidToken,
+			wantCause:   usecase.ErrInvalidToken,
 		},
 		{
-			name:        "application failure",
+			name:        "use case failure",
 			header:      "Bearer valid",
 			authErr:     internalErr,
 			wantCode:    connect.CodeInternal,
@@ -229,8 +229,8 @@ func TestNewAuthInterceptorRequiresAuthenticator(t *testing.T) {
 	}
 }
 
-func authenticatorReturning(userID identifier.UserID, err error) IAuthenticator {
-	return AuthenticatorFunc(func(context.Context, string) (identifier.UserID, error) {
+func authenticatorReturning(userID identifier.UserID, err error) IAuthenticateUseCase {
+	return AuthenticateUseCaseFunc(func(context.Context, string) (identifier.UserID, error) {
 		return userID, err
 	})
 }

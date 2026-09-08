@@ -13,7 +13,7 @@ import (
 	"github.com/gesop0n/spaco/backend/internal/modules/authentication"
 	"github.com/gesop0n/spaco/backend/internal/modules/authentication/internal/adapter/rpc"
 	"github.com/gesop0n/spaco/backend/internal/modules/authentication/internal/adapter/supabase"
-	"github.com/gesop0n/spaco/backend/internal/modules/authentication/internal/application"
+	"github.com/gesop0n/spaco/backend/internal/modules/authentication/internal/usecase"
 )
 
 // Configは、authentication moduleの外部接続設定を保持する。
@@ -32,7 +32,7 @@ type Module struct {
 }
 
 // Newは、Supabase verifier、authentication service、ConnectRPC interceptorを
-// 組み立てる。ctxにはapplicationと同じ寿命のcontextを渡す。
+// 組み立てる。ctxにはauthentication moduleと同じ寿命のcontextを渡す。
 func New(
 	ctx context.Context,
 	config Config,
@@ -53,12 +53,12 @@ func New(
 		return nil, fmt.Errorf("create authentication module: %w", err)
 	}
 
-	service, err := application.NewService(verifier, resolver)
+	authenticate, err := usecase.NewAuthenticate(verifier, resolver)
 	if err != nil {
 		closeErr := verifier.Close(context.Background())
-		return nil, errors.Join(fmt.Errorf("create authentication service: %w", err), closeErr)
+		return nil, errors.Join(fmt.Errorf("create authenticate use case: %w", err), closeErr)
 	}
-	interceptor, err := rpc.NewAuthInterceptor(service)
+	interceptor, err := rpc.NewAuthInterceptor(authenticate)
 	if err != nil {
 		closeErr := verifier.Close(context.Background())
 		return nil, errors.Join(fmt.Errorf("create authentication interceptor: %w", err), closeErr)

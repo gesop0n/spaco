@@ -14,7 +14,7 @@ import (
 	"github.com/lestrrat-go/jwx/v3/jwk"
 	"github.com/lestrrat-go/jwx/v3/jwt"
 
-	"github.com/gesop0n/spaco/backend/internal/modules/authentication/internal/application"
+	"github.com/gesop0n/spaco/backend/internal/modules/authentication/internal/usecase"
 )
 
 const (
@@ -45,10 +45,10 @@ type TokenVerifier struct {
 	cache     *jwk.Cache
 }
 
-var _ application.ITokenVerifier = (*TokenVerifier)(nil)
+var _ usecase.ITokenVerifier = (*TokenVerifier)(nil)
 
 // NewTokenVerifier は、最初のJWKSを取得し、バックグラウンド更新を開始する。
-// ctxにはapplicationと同じ寿命のcontextを渡し、shutdown時にCloseを呼び出す。
+// ctxにはauthentication moduleと同じ寿命のcontextを渡し、shutdown時にCloseを呼び出す。
 func NewTokenVerifier(
 	ctx context.Context,
 	config TokenVerifierConfig,
@@ -58,7 +58,7 @@ func NewTokenVerifier(
 		return nil, err
 	}
 
-	// JWKS cacheはapplication全体で1つだけ生成し、requestごとの取得を避ける。
+	// JWKS cacheはauthentication module全体で1つだけ生成し、requestごとの取得を避ける。
 	cache, err := jwk.NewCache(ctx, httprc.NewClient())
 	if err != nil {
 		return nil, fmt.Errorf("create Supabase JWKS cache: %w", err)
@@ -102,12 +102,12 @@ func NewTokenVerifier(
 func (v *TokenVerifier) Verify(
 	ctx context.Context,
 	rawToken string,
-) (application.Identity, error) {
+) (usecase.Identity, error) {
 	if err := ctx.Err(); err != nil {
-		return application.Identity{}, err
+		return usecase.Identity{}, err
 	}
 	if strings.TrimSpace(rawToken) == "" {
-		return application.Identity{}, application.ErrInvalidToken
+		return usecase.Identity{}, usecase.ErrInvalidToken
 	}
 
 	// 署名だけでなく、発行者・利用対象・期限・必須claimも同時に検証する。
@@ -124,18 +124,18 @@ func (v *TokenVerifier) Verify(
 		jwt.WithRequiredClaim(jwt.ExpirationKey),
 	)
 	if err != nil {
-		return application.Identity{}, fmt.Errorf("%w: %v", application.ErrInvalidToken, err)
+		return usecase.Identity{}, fmt.Errorf("%w: %v", usecase.ErrInvalidToken, err)
 	}
 
 	issuer, issuerOK := token.Issuer()
 	subject, subjectOK := token.Subject()
 	if !issuerOK || !subjectOK {
-		return application.Identity{}, application.ErrInvalidToken
+		return usecase.Identity{}, usecase.ErrInvalidToken
 	}
 
-	identity, err := application.NewIdentity(issuer, subject)
+	identity, err := usecase.NewIdentity(issuer, subject)
 	if err != nil {
-		return application.Identity{}, fmt.Errorf("%w: %v", application.ErrInvalidToken, err)
+		return usecase.Identity{}, fmt.Errorf("%w: %v", usecase.ErrInvalidToken, err)
 	}
 
 	return identity, nil
