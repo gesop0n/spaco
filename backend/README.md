@@ -53,6 +53,12 @@ ConnectRPCのlogging interceptorは、全RPCのprocedure名、stream種別、pro
 
 Migrationは[`migrations`](migrations)をaccount moduleのテーブル定義として管理し、Gooseで適用します。[`Makefile`](Makefile)が`backend/.env`をincludeし、`DATABASE_URL`をGoose用の環境変数へ割り当てます。
 
+`00002_add_account_username.sql`はアプリ内のユーザー名を追加します。API更新前に
+`make migrate-up`を実行してください。既存のAtCoder IDやタイムゾーンはそのまま保持し、
+ユーザー名は未設定として移行します。ユーザー名が未設定のアカウントは次回利用時に
+プロフィール設定へ進みます。ユーザー名とタイムゾーンがあれば初期設定は完了し、
+AtCoder IDは任意です。
+
 Supabaseのtransaction poolerとnamed prepared statementが衝突しないよう、GooseとAPI serverのpgx query modeには`exec`を指定しています。`.env`の`DATABASE_URL`へquery parameterを追加する必要はありません。
 
 `.env`はMakefileとして読み込まれるため、値を`"`で囲まない形式を使用します。接続文字列のパスワードに`@`、`:`、`/`、`?`、`#`、`%`などのURL予約文字を含む場合は、percent-encodingした値を設定してください。`$`はMakeによる展開を避けるため`$$`と記述します。

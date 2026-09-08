@@ -124,7 +124,7 @@ func (r *Repository) FindByID(
 	if err != nil {
 		return domain.Account{}, fmt.Errorf("find account by id: %w", err)
 	}
-	return rehydrateAccount(row.ID, row.AtcoderID, row.TimeZone)
+	return rehydrateAccount(row.ID, row.Username, row.AtcoderID, row.TimeZone)
 }
 
 func (r *Repository) UpdateProfile(
@@ -132,12 +132,17 @@ func (r *Repository) UpdateProfile(
 	userID identifier.UserID,
 	profile domain.Profile,
 ) (domain.Account, error) {
-	atCoderID := profile.AtCoderID()
+	username := profile.Username()
+	var atCoderID *string
+	if value, ok := profile.AtCoderID(); ok {
+		atCoderID = &value
+	}
 	row, err := r.queries.UpdateAccountProfile(
 		ctx,
 		accountsqlc.UpdateAccountProfileParams{
 			ID:        userID.UUID(),
-			AtcoderID: &atCoderID,
+			Username:  &username,
+			AtcoderID: atCoderID,
 			TimeZone:  profile.TimeZone(),
 		},
 	)
@@ -147,11 +152,12 @@ func (r *Repository) UpdateProfile(
 	if err != nil {
 		return domain.Account{}, fmt.Errorf("update account profile: %w", err)
 	}
-	return rehydrateAccount(row.ID, row.AtcoderID, row.TimeZone)
+	return rehydrateAccount(row.ID, row.Username, row.AtcoderID, row.TimeZone)
 }
 
 func rehydrateAccount(
 	userIDValue uuid.UUID,
+	username *string,
 	atCoderID *string,
 	timeZone string,
 ) (domain.Account, error) {
@@ -159,7 +165,7 @@ func rehydrateAccount(
 	if err != nil {
 		return domain.Account{}, fmt.Errorf("parse stored user id: %w", err)
 	}
-	account, err := domain.RehydrateAccount(userID, atCoderID, timeZone)
+	account, err := domain.RehydrateAccount(userID, username, atCoderID, timeZone)
 	if err != nil {
 		return domain.Account{}, fmt.Errorf("rehydrate stored account: %w", err)
 	}

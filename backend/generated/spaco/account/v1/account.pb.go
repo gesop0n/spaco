@@ -63,8 +63,10 @@ type Account struct {
 	AtcoderId      *string                `protobuf:"bytes,2,opt,name=atcoder_id,json=atcoderId,proto3,oneof" json:"atcoder_id,omitempty"`
 	TimeZone       string                 `protobuf:"bytes,3,opt,name=time_zone,json=timeZone,proto3" json:"time_zone,omitempty"`
 	SetupCompleted bool                   `protobuf:"varint,4,opt,name=setup_completed,json=setupCompleted,proto3" json:"setup_completed,omitempty"`
-	unknownFields  protoimpl.UnknownFields
-	sizeCache      protoimpl.SizeCache
+	// アプリ内の表示名。初期設定前は未設定。
+	Username      *string `protobuf:"bytes,5,opt,name=username,proto3,oneof" json:"username,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
 }
 
 func (x *Account) Reset() {
@@ -125,6 +127,13 @@ func (x *Account) GetSetupCompleted() bool {
 	return false
 }
 
+func (x *Account) GetUsername() string {
+	if x != nil && x.Username != nil {
+		return *x.Username
+	}
+	return ""
+}
+
 type GetCurrentAccountResponse struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	Account       *Account               `protobuf:"bytes,1,opt,name=account,proto3" json:"account,omitempty"`
@@ -170,9 +179,12 @@ func (x *GetCurrentAccountResponse) GetAccount() *Account {
 }
 
 type UpdateProfileRequest struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	AtcoderId     string                 `protobuf:"bytes,1,opt,name=atcoder_id,json=atcoderId,proto3" json:"atcoder_id,omitempty"`
-	TimeZone      string                 `protobuf:"bytes,2,opt,name=time_zone,json=timeZone,proto3" json:"time_zone,omitempty"`
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// 空文字または省略で、登録済みのAtCoder IDも解除する。
+	AtcoderId string `protobuf:"bytes,1,opt,name=atcoder_id,json=atcoderId,proto3" json:"atcoder_id,omitempty"`
+	TimeZone  string `protobuf:"bytes,2,opt,name=time_zone,json=timeZone,proto3" json:"time_zone,omitempty"`
+	// 必須の表示名。前後の空白を除き1〜40文字。重複は許可する。
+	Username      string `protobuf:"bytes,3,opt,name=username,proto3" json:"username,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -217,6 +229,13 @@ func (x *UpdateProfileRequest) GetAtcoderId() string {
 func (x *UpdateProfileRequest) GetTimeZone() string {
 	if x != nil {
 		return x.TimeZone
+	}
+	return ""
+}
+
+func (x *UpdateProfileRequest) GetUsername() string {
+	if x != nil {
+		return x.Username
 	}
 	return ""
 }
@@ -270,20 +289,23 @@ var File_spaco_account_v1_account_proto protoreflect.FileDescriptor
 const file_spaco_account_v1_account_proto_rawDesc = "" +
 	"\n" +
 	"\x1espaco/account/v1/account.proto\x12\x10spaco.account.v1\"\x1a\n" +
-	"\x18GetCurrentAccountRequest\"\x92\x01\n" +
+	"\x18GetCurrentAccountRequest\"\xc0\x01\n" +
 	"\aAccount\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\tR\x02id\x12\"\n" +
 	"\n" +
 	"atcoder_id\x18\x02 \x01(\tH\x00R\tatcoderId\x88\x01\x01\x12\x1b\n" +
 	"\ttime_zone\x18\x03 \x01(\tR\btimeZone\x12'\n" +
-	"\x0fsetup_completed\x18\x04 \x01(\bR\x0esetupCompletedB\r\n" +
-	"\v_atcoder_id\"P\n" +
+	"\x0fsetup_completed\x18\x04 \x01(\bR\x0esetupCompleted\x12\x1f\n" +
+	"\busername\x18\x05 \x01(\tH\x01R\busername\x88\x01\x01B\r\n" +
+	"\v_atcoder_idB\v\n" +
+	"\t_username\"P\n" +
 	"\x19GetCurrentAccountResponse\x123\n" +
-	"\aaccount\x18\x01 \x01(\v2\x19.spaco.account.v1.AccountR\aaccount\"R\n" +
+	"\aaccount\x18\x01 \x01(\v2\x19.spaco.account.v1.AccountR\aaccount\"n\n" +
 	"\x14UpdateProfileRequest\x12\x1d\n" +
 	"\n" +
 	"atcoder_id\x18\x01 \x01(\tR\tatcoderId\x12\x1b\n" +
-	"\ttime_zone\x18\x02 \x01(\tR\btimeZone\"L\n" +
+	"\ttime_zone\x18\x02 \x01(\tR\btimeZone\x12\x1a\n" +
+	"\busername\x18\x03 \x01(\tR\busername\"L\n" +
 	"\x15UpdateProfileResponse\x123\n" +
 	"\aaccount\x18\x01 \x01(\v2\x19.spaco.account.v1.AccountR\aaccount2\xe0\x01\n" +
 	"\x0eAccountService\x12l\n" +

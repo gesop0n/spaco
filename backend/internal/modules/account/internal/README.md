@@ -10,7 +10,8 @@
 
 - アプリ内 `UserID` の発行とアカウントの生成
 - 認証サービスの `issuer + subject` と `UserID` の対応付け
-- 参照対象となる AtCoder ID の設定と変更
+- アプリ内で表示するユーザー名の登録と変更
+- 任意の参照対象となる AtCoder ID の設定・変更・解除
 - タイムゾーンの設定と変更
 
 `subject` は認証サービス内でのみ一意な場合があるため、外部ユーザーの識別には
@@ -46,6 +47,7 @@ internal/
 ├── README.md
 ├── domain/
 │   ├── account.go
+│   ├── username.go
 │   └── auth_identity.go
 ├── usecase/
 │   ├── ports.go
@@ -67,6 +69,7 @@ internal/
 ```go
 type Account struct {
 	id        identifier.UserID
+	username  *string
 	atCoderID *string
 	timeZone  string
 }
@@ -88,11 +91,24 @@ type Account struct {
 複数の認証方法を同じアカウントへリンクする要件が生まれるまでは、複数件を扱うための
 抽象化を先に追加しない。
 
+### `Username`
+
+アプリ内の表示名。前後の空白を除いて1〜40 Unicode文字とし、制御文字を許可しない。
+日本語や名前の途中の空白を使え、他ユーザーとの重複は許可する。ログイン用の識別子や
+AtCoder IDとは独立しており、アプリ内の識別は引き続き`UserID`を使用する。
+
+初期設定前は未設定を許可する。利用開始にはユーザー名とタイムゾーンの設定を必須とし、
+`SetupCompleted`もこの2つで判定する。AtCoder IDの有無は初期設定の完了に影響しない。
+
 ### `AtCoderID`
 
 提出履歴を参照する対象を表す値オブジェクト。空文字や文字数など、確認できた
 AtCoderの制約だけを生成時に検証する。外部APIへの問い合わせが必要な存在確認は
 値オブジェクトでは行わず、use caseからportを介して実行する。
+
+プロフィールでは任意項目とする。`UpdateProfile`に空文字または空白だけを渡すと、
+既存の登録も解除し、DBでは`NULL`を保存する。設定する場合だけ`AtCoderID`を生成して
+検証する。取得APIでは未設定の`atcoder_id`を省略する。
 
 AtCoder ID を一意にするかどうかは、本人確認済みアカウントだけを扱うのか、単に
 参照したいIDを登録できるのかというプロダクト要件を決めてから判断する。
@@ -117,8 +133,11 @@ domain型をProtobuf型へ変換し、repositoryやdomainを通信契約へ依�
 
 ### `UpdateProfile`
 
-AtCoder IDとIANA形式のタイムゾーンをdomain層で検証してから保存する。更新後のAccountを
+ユーザー名、任意のAtCoder ID、IANA形式のタイムゾーンをdomain層で検証してから保存する。更新後のAccountを
 返し、client側は`GetCurrentAccount`のQuery cacheを再取得する。
+
+更新はプロフィール全体の置き換えとする。ユーザー名とタイムゾーンは必須で、
+AtCoder IDの省略・空文字は登録解除を意味する。
 
 use caseが必要とするrepository interfaceは利用側で定義し、具体的なSQLや
 DBライブラリの型は `adapter/postgres` に閉じ込める。

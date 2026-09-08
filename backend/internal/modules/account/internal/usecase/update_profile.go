@@ -24,13 +24,14 @@ func NewUpdateProfile(repository IUpdateProfileRepository) (*UpdateProfile, erro
 func (u *UpdateProfile) Execute(
 	ctx context.Context,
 	userID identifier.UserID,
+	username string,
 	atCoderID string,
 	timeZone string,
 ) (domain.Account, error) {
 	if userID.IsZero() {
 		return domain.Account{}, fmt.Errorf("update profile: user id is required")
 	}
-	profile, err := domain.NewProfile(atCoderID, timeZone)
+	profile, err := domain.NewProfile(username, atCoderID, timeZone)
 	if err != nil {
 		return domain.Account{}, fmt.Errorf("update profile: %w", err)
 	}

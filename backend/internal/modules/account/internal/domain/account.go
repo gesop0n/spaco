@@ -21,6 +21,7 @@ const defaultTimeZone = "Asia/Tokyo"
 // Accountは、アプリ内ユーザーと復習に必要なprofileを保持する集約である。
 type Account struct {
 	id        identifier.UserID
+	username  *string
 	atCoderID *string
 	timeZone  string
 }
@@ -37,6 +38,7 @@ func NewAccount(id identifier.UserID) (Account, error) {
 // RehydrateAccountは、repositoryから取得した値をAccountへ復元する。
 func RehydrateAccount(
 	id identifier.UserID,
+	username *string,
 	atCoderID *string,
 	timeZone string,
 ) (Account, error) {
@@ -50,6 +52,15 @@ func RehydrateAccount(
 		return Account{}, err
 	}
 	account.timeZone = parsedTimeZone.String()
+
+	if username != nil {
+		parsedUsername, parseErr := NewUsername(*username)
+		if parseErr != nil {
+			return Account{}, parseErr
+		}
+		value := parsedUsername.String()
+		account.username = &value
+	}
 
 	if atCoderID != nil {
 		parsedAtCoderID, parseErr := NewAtCoderID(*atCoderID)
@@ -65,6 +76,13 @@ func RehydrateAccount(
 
 func (a Account) ID() identifier.UserID { return a.id }
 
+func (a Account) Username() (string, bool) {
+	if a.username == nil {
+		return "", false
+	}
+	return *a.username, true
+}
+
 func (a Account) AtCoderID() (string, bool) {
 	if a.atCoderID == nil {
 		return "", false
@@ -76,30 +94,45 @@ func (a Account) TimeZone() string { return a.timeZone }
 
 // SetupCompletedは、利用開始に必要なprofileが設定済みかを返す。
 func (a Account) SetupCompleted() bool {
-	return a.atCoderID != nil && a.timeZone != ""
+	return a.username != nil && a.timeZone != ""
 }
 
 // Profileは、ユーザーが変更できるAccount属性をまとめた値である。
 type Profile struct {
-	atCoderID AtCoderID
+	username  Username
+	atCoderID *AtCoderID
 	timeZone  TimeZone
 }
 
-func NewProfile(atCoderID, timeZone string) (Profile, error) {
-	parsedAtCoderID, err := NewAtCoderID(atCoderID)
+func NewProfile(username, atCoderID, timeZone string) (Profile, error) {
+	parsedUsername, err := NewUsername(username)
 	if err != nil {
 		return Profile{}, err
+	}
+	var parsedAtCoderID *AtCoderID
+	if strings.TrimSpace(atCoderID) != "" {
+		value, parseErr := NewAtCoderID(atCoderID)
+		if parseErr != nil {
+			return Profile{}, parseErr
+		}
+		parsedAtCoderID = &value
 	}
 	parsedTimeZone, err := NewTimeZone(timeZone)
 	if err != nil {
 		return Profile{}, err
 	}
 
-	return Profile{atCoderID: parsedAtCoderID, timeZone: parsedTimeZone}, nil
+	return Profile{username: parsedUsername, atCoderID: parsedAtCoderID, timeZone: parsedTimeZone}, nil
 }
 
-func (p Profile) AtCoderID() string { return p.atCoderID.String() }
-func (p Profile) TimeZone() string  { return p.timeZone.String() }
+func (p Profile) Username() string { return p.username.String() }
+func (p Profile) AtCoderID() (string, bool) {
+	if p.atCoderID == nil {
+		return "", false
+	}
+	return p.atCoderID.String(), true
+}
+func (p Profile) TimeZone() string { return p.timeZone.String() }
 
 type AtCoderID struct{ value string }
 

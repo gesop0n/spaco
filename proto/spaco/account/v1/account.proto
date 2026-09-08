@@ -15,6 +15,8 @@ message Account {
   optional string atcoder_id = 2;
   string time_zone = 3;
   bool setup_completed = 4;
+  // アプリ内の表示名。初期設定前は未設定。
+  optional string username = 5;
 }
 
 message GetCurrentAccountResponse {
@@ -22,8 +24,11 @@ message GetCurrentAccountResponse {
 }
 
 message UpdateProfileRequest {
+  // 空文字または省略で、登録済みのAtCoder IDも解除する。
   string atcoder_id = 1;
   string time_zone = 2;
+  // 必須の表示名。前後の空白を除き1〜40文字。重複は許可する。
+  string username = 3;
 }
 
 message UpdateProfileResponse {

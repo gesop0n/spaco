@@ -57,13 +57,14 @@ func (q *Queries) DeleteAccount(ctx context.Context, id uuid.UUID) error {
 }
 
 const findAccountByID = `-- name: FindAccountByID :one
-SELECT id, atcoder_id, time_zone
+SELECT id, username, atcoder_id, time_zone
 FROM accounts
 WHERE id = $1
 `
 
 type FindAccountByIDRow struct {
 	ID        uuid.UUID
+	Username  *string
 	AtcoderID *string
 	TimeZone  string
 }
@@ -71,7 +72,12 @@ type FindAccountByIDRow struct {
 func (q *Queries) FindAccountByID(ctx context.Context, id uuid.UUID) (FindAccountByIDRow, error) {
 	row := q.db.QueryRow(ctx, findAccountByID, id)
 	var i FindAccountByIDRow
-	err := row.Scan(&i.ID, &i.AtcoderID, &i.TimeZone)
+	err := row.Scan(
+		&i.ID,
+		&i.Username,
+		&i.AtcoderID,
+		&i.TimeZone,
+	)
 	return i, err
 }
 
@@ -98,26 +104,39 @@ UPDATE accounts
 SET
     atcoder_id = $2,
     time_zone = $3,
+    username = $4,
     updated_at = now()
 WHERE id = $1
-RETURNING id, atcoder_id, time_zone
+RETURNING id, username, atcoder_id, time_zone
 `
 
 type UpdateAccountProfileParams struct {
 	ID        uuid.UUID
 	AtcoderID *string
 	TimeZone  string
+	Username  *string
 }
 
 type UpdateAccountProfileRow struct {
 	ID        uuid.UUID
+	Username  *string
 	AtcoderID *string
 	TimeZone  string
 }
 
 func (q *Queries) UpdateAccountProfile(ctx context.Context, arg UpdateAccountProfileParams) (UpdateAccountProfileRow, error) {
-	row := q.db.QueryRow(ctx, updateAccountProfile, arg.ID, arg.AtcoderID, arg.TimeZone)
+	row := q.db.QueryRow(ctx, updateAccountProfile,
+		arg.ID,
+		arg.AtcoderID,
+		arg.TimeZone,
+		arg.Username,
+	)
 	var i UpdateAccountProfileRow
-	err := row.Scan(&i.ID, &i.AtcoderID, &i.TimeZone)
+	err := row.Scan(
+		&i.ID,
+		&i.Username,
+		&i.AtcoderID,
+		&i.TimeZone,
+	)
 	return i, err
 }

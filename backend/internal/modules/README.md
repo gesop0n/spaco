@@ -10,7 +10,7 @@
 | モジュール | 所有する責務・データ |
 | --- | --- |
 | `authentication` | access tokenの検証、外部認証identityからアプリ内UserIDを確定する処理、認証済みUserIDの受け渡し |
-| `account` | アプリ内ユーザー、認証サービスのユーザーIDとの対応、参照するAtCoder ID、タイムゾーン |
+| `account` | アプリ内ユーザー、ユーザー名、認証サービスのユーザーIDとの対応、任意のAtCoder ID、タイムゾーン |
 | `catalog` | コンテスト・問題の基本情報、検索、問題URLから登録した情報の補完 |
 | `submission` | AtCoderの提出履歴、同期進捗、同期失敗、再試行 |
 | `review` | 復習対象、復習結果、履歴、次回予定、一時停止・再開 |

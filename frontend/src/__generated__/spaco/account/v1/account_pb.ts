@@ -10,7 +10,7 @@ import type { Message } from "@bufbuild/protobuf";
  * Describes the file spaco/account/v1/account.proto.
  */
 export const file_spaco_account_v1_account: GenFile /*@__PURE__*/ = fileDesc(
-  "Ch5zcGFjby9hY2NvdW50L3YxL2FjY291bnQucHJvdG8SEHNwYWNvLmFjY291bnQudjEiGgoYR2V0Q3VycmVudEFjY291bnRSZXF1ZXN0ImkKB0FjY291bnQSCgoCaWQYASABKAkSFwoKYXRjb2Rlcl9pZBgCIAEoCUgAiAEBEhEKCXRpbWVfem9uZRgDIAEoCRIXCg9zZXR1cF9jb21wbGV0ZWQYBCABKAhCDQoLX2F0Y29kZXJfaWQiRwoZR2V0Q3VycmVudEFjY291bnRSZXNwb25zZRIqCgdhY2NvdW50GAEgASgLMhkuc3BhY28uYWNjb3VudC52MS5BY2NvdW50Ij0KFFVwZGF0ZVByb2ZpbGVSZXF1ZXN0EhIKCmF0Y29kZXJfaWQYASABKAkSEQoJdGltZV96b25lGAIgASgJIkMKFVVwZGF0ZVByb2ZpbGVSZXNwb25zZRIqCgdhY2NvdW50GAEgASgLMhkuc3BhY28uYWNjb3VudC52MS5BY2NvdW50MuABCg5BY2NvdW50U2VydmljZRJsChFHZXRDdXJyZW50QWNjb3VudBIqLnNwYWNvLmFjY291bnQudjEuR2V0Q3VycmVudEFjY291bnRSZXF1ZXN0Gisuc3BhY28uYWNjb3VudC52MS5HZXRDdXJyZW50QWNjb3VudFJlc3BvbnNlEmAKDVVwZGF0ZVByb2ZpbGUSJi5zcGFjby5hY2NvdW50LnYxLlVwZGF0ZVByb2ZpbGVSZXF1ZXN0Gicuc3BhY28uYWNjb3VudC52MS5VcGRhdGVQcm9maWxlUmVzcG9uc2VCzQEKFGNvbS5zcGFjby5hY2NvdW50LnYxQgxBY2NvdW50UHJvdG9QAVpFZ2l0aHViLmNvbS9nZXNvcDBuL3NwYWNvL2JhY2tlbmQvZ2VuZXJhdGVkL3NwYWNvL2FjY291bnQvdjE7YWNjb3VudHYxogIDU0FYqgIQU3BhY28uQWNjb3VudC5WMcoCEFNwYWNvXEFjY291bnRcVjHiAhxTcGFjb1xBY2NvdW50XFYxXEdQQk1ldGFkYXRh6gISU3BhY286OkFjY291bnQ6OlYxYgZwcm90bzM",
+  "Ch5zcGFjby9hY2NvdW50L3YxL2FjY291bnQucHJvdG8SEHNwYWNvLmFjY291bnQudjEiGgoYR2V0Q3VycmVudEFjY291bnRSZXF1ZXN0Io0BCgdBY2NvdW50EgoKAmlkGAEgASgJEhcKCmF0Y29kZXJfaWQYAiABKAlIAIgBARIRCgl0aW1lX3pvbmUYAyABKAkSFwoPc2V0dXBfY29tcGxldGVkGAQgASgIEhUKCHVzZXJuYW1lGAUgASgJSAGIAQFCDQoLX2F0Y29kZXJfaWRCCwoJX3VzZXJuYW1lIkcKGUdldEN1cnJlbnRBY2NvdW50UmVzcG9uc2USKgoHYWNjb3VudBgBIAEoCzIZLnNwYWNvLmFjY291bnQudjEuQWNjb3VudCJPChRVcGRhdGVQcm9maWxlUmVxdWVzdBISCgphdGNvZGVyX2lkGAEgASgJEhEKCXRpbWVfem9uZRgCIAEoCRIQCgh1c2VybmFtZRgDIAEoCSJDChVVcGRhdGVQcm9maWxlUmVzcG9uc2USKgoHYWNjb3VudBgBIAEoCzIZLnNwYWNvLmFjY291bnQudjEuQWNjb3VudDLgAQoOQWNjb3VudFNlcnZpY2USbAoRR2V0Q3VycmVudEFjY291bnQSKi5zcGFjby5hY2NvdW50LnYxLkdldEN1cnJlbnRBY2NvdW50UmVxdWVzdBorLnNwYWNvLmFjY291bnQudjEuR2V0Q3VycmVudEFjY291bnRSZXNwb25zZRJgCg1VcGRhdGVQcm9maWxlEiYuc3BhY28uYWNjb3VudC52MS5VcGRhdGVQcm9maWxlUmVxdWVzdBonLnNwYWNvLmFjY291bnQudjEuVXBkYXRlUHJvZmlsZVJlc3BvbnNlQs0BChRjb20uc3BhY28uYWNjb3VudC52MUIMQWNjb3VudFByb3RvUAFaRWdpdGh1Yi5jb20vZ2Vzb3Awbi9zcGFjby9iYWNrZW5kL2dlbmVyYXRlZC9zcGFjby9hY2NvdW50L3YxO2FjY291bnR2MaICA1NBWKoCEFNwYWNvLkFjY291bnQuVjHKAhBTcGFjb1xBY2NvdW50XFYx4gIcU3BhY29cQWNjb3VudFxWMVxHUEJNZXRhZGF0YeoCElNwYWNvOjpBY2NvdW50OjpWMWIGcHJvdG8z",
 );
 
 /**
@@ -48,6 +48,13 @@ export type Account = Message<"spaco.account.v1.Account"> & {
    * @generated from field: bool setup_completed = 4;
    */
   setupCompleted: boolean;
+
+  /**
+   * アプリ内の表示名。初期設定前は未設定。
+   *
+   * @generated from field: optional string username = 5;
+   */
+  username?: string | undefined;
 };
 
 /**
@@ -81,6 +88,8 @@ export const GetCurrentAccountResponseSchema: GenMessage<GetCurrentAccountRespon
  */
 export type UpdateProfileRequest = Message<"spaco.account.v1.UpdateProfileRequest"> & {
   /**
+   * 空文字または省略で、登録済みのAtCoder IDも解除する。
+   *
    * @generated from field: string atcoder_id = 1;
    */
   atcoderId: string;
@@ -89,6 +98,13 @@ export type UpdateProfileRequest = Message<"spaco.account.v1.UpdateProfileReques
    * @generated from field: string time_zone = 2;
    */
   timeZone: string;
+
+  /**
+   * 必須の表示名。前後の空白を除き1〜40文字。重複は許可する。
+   *
+   * @generated from field: string username = 3;
+   */
+  username: string;
 };
 
 /**

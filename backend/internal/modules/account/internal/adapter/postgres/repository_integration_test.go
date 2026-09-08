@@ -116,15 +116,41 @@ func TestRepositoryIntegration(t *testing.T) {
 		t.Fatal("new account SetupCompleted() = true, want false")
 	}
 
-	profile, err := domain.NewProfile("tourist", "Asia/Tokyo")
-	if err != nil {
-		t.Fatalf("NewProfile() error = %v", err)
+	// AtCoder IDなしで初期設定し、追加・解除とユーザー名変更を永続化できる。
+	for _, update := range []struct {
+		username  string
+		atCoderID string
+	}{
+		{username: "復習 太郎"},
+		{username: "復習 太郎", atCoderID: "tourist"},
+		{username: "新しい名前"},
+	} {
+		profile, err := domain.NewProfile(update.username, update.atCoderID, "Asia/Tokyo")
+		if err != nil {
+			t.Fatalf("NewProfile() error = %v", err)
+		}
+		updated, err := repository.UpdateProfile(ctx, userID, profile)
+		if err != nil {
+			t.Fatalf("UpdateProfile() error = %v", err)
+		}
+		stored, err := repository.FindByID(ctx, userID)
+		if err != nil {
+			t.Fatalf("FindByID() error = %v", err)
+		}
+		for _, result := range []domain.Account{updated, stored} {
+			if name, ok := result.Username(); !ok || name != update.username {
+				t.Fatalf("Username() = %q, %v; want %q", name, ok, update.username)
+			}
+			if atCoderID, ok := result.AtCoderID(); atCoderID != update.atCoderID || ok != (update.atCoderID != "") {
+				t.Fatalf("AtCoderID() = %q, %v; want %q", atCoderID, ok, update.atCoderID)
+			}
+			if !result.SetupCompleted() {
+				t.Fatal("updated account SetupCompleted() = false, want true")
+			}
+		}
 	}
-	account, err = repository.UpdateProfile(ctx, userID, profile)
-	if err != nil {
-		t.Fatalf("UpdateProfile() error = %v", err)
-	}
-	if !account.SetupCompleted() {
-		t.Fatal("updated account SetupCompleted() = false, want true")
+	var atCoderIDIsNull bool
+	if err := pool.QueryRow(ctx, `SELECT atcoder_id IS NULL FROM accounts WHERE id = $1`, userID.UUID()).Scan(&atCoderIDIsNull); err != nil || !atCoderIDIsNull {
+		t.Fatalf("cleared AtCoder ID must be SQL NULL: isNull = %v, error = %v", atCoderIDIsNull, err)
 	}
 }

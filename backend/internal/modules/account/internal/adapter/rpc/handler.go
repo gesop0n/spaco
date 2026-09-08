@@ -21,7 +21,7 @@ type IGetCurrentAccountUseCase interface {
 
 // IUpdateProfileUseCaseは、RPC adapterが必要とするプロフィール更新を表すinterfaceである。
 type IUpdateProfileUseCase interface {
-	Execute(context.Context, identifier.UserID, string, string) (domain.Account, error)
+	Execute(context.Context, identifier.UserID, string, string, string) (domain.Account, error)
 }
 
 type Handler struct {
@@ -78,6 +78,7 @@ func (h *Handler) UpdateProfile(
 	account, err := h.updateProfile.Execute(
 		ctx,
 		userID,
+		request.Msg.GetUsername(),
 		request.Msg.GetAtcoderId(),
 		request.Msg.GetTimeZone(),
 	)
@@ -106,6 +107,9 @@ func accountMessage(account domain.Account) *accountv1.Account {
 		TimeZone:       account.TimeZone(),
 		SetupCompleted: account.SetupCompleted(),
 	}
+	if username, ok := account.Username(); ok {
+		message.Username = &username
+	}
 	if atCoderID, ok := account.AtCoderID(); ok {
 		message.AtcoderId = &atCoderID
 	}
@@ -118,7 +122,7 @@ func connectError(err error) *connect.Error {
 		return connect.NewError(connect.CodeCanceled, context.Canceled)
 	case errors.Is(err, context.DeadlineExceeded):
 		return connect.NewError(connect.CodeDeadlineExceeded, context.DeadlineExceeded)
-	case errors.Is(err, domain.ErrInvalidAtCoderID), errors.Is(err, domain.ErrInvalidTimeZone):
+	case errors.Is(err, domain.ErrInvalidUsername), errors.Is(err, domain.ErrInvalidAtCoderID), errors.Is(err, domain.ErrInvalidTimeZone):
 		return connect.NewError(connect.CodeInvalidArgument, errors.New("invalid profile"))
 	case errors.Is(err, usecase.ErrAccountNotFound):
 		return connect.NewError(connect.CodeNotFound, errors.New("account not found"))

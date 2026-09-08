@@ -17,7 +17,7 @@ DELETE FROM accounts
 WHERE id = $1;
 
 -- name: FindAccountByID :one
-SELECT id, atcoder_id, time_zone
+SELECT id, username, atcoder_id, time_zone
 FROM accounts
 WHERE id = $1;
 
@@ -26,6 +26,7 @@ UPDATE accounts
 SET
     atcoder_id = $2,
     time_zone = $3,
+    username = $4,
     updated_at = now()
 WHERE id = $1
-RETURNING id, atcoder_id, time_zone;
+RETURNING id, username, atcoder_id, time_zone;

@@ -6,10 +6,9 @@ import { useEffect, useState } from "react";
 import { useForm } from "react-hook-form";
 import { AccountService } from "@/__generated__/spaco/account/v1/account_pb";
 import { connectErrorMessage } from "@/lib/connect";
+import { defaultTimeZone, getTimeZoneGroups } from "./time-zones";
 import { profileSchema } from "./validation";
 import type { ProfileFormValues } from "./validation";
-
-const browserTimeZone = Intl.DateTimeFormat().resolvedOptions().timeZone || "Asia/Tokyo";
 
 /** profile取得・更新と、更新後のaccount cache同期を担当する。 */
 export function useProfileForm() {
@@ -23,8 +22,9 @@ export function useProfileForm() {
     resolver: zodResolver(profileSchema),
     mode: "onTouched",
     defaultValues: {
+      username: "",
       atcoderId: "",
-      timeZone: browserTimeZone,
+      timeZone: defaultTimeZone,
     },
   });
 
@@ -32,8 +32,9 @@ export function useProfileForm() {
   useEffect(() => {
     if (account == null) return;
     form.reset({
+      username: account.username ?? "",
       atcoderId: account.atcoderId ?? "",
-      timeZone: account.timeZone || browserTimeZone,
+      timeZone: account.timeZone || defaultTimeZone,
     });
   }, [account, form]);
 
@@ -59,5 +60,7 @@ export function useProfileForm() {
     ...form,
     handleSubmit,
     serverError,
+    setupCompleted: account?.setupCompleted ?? false,
+    timeZoneGroups: getTimeZoneGroups(account?.timeZone),
   };
 }
