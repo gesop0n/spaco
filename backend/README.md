@@ -40,7 +40,7 @@ gcloud run deploy spaco-api \
   --startup-probe httpGet.path=/health,timeoutSeconds=2,periodSeconds=5,failureThreshold=12
 ```
 
-デプロイ後は表示されたCloud Run URLへ`/health`を付け、`200 OK`と`ok`が返ることを確認します。この手動手順は初回のcontainer・接続確認用です。継続的なデプロイでは、Artifact Registry、Cloud Run、IAM、Secret ManagerをTerraformで管理し、commit SHAごとのimageをCI/CDからデプロイします。
+デプロイ後は表示されたCloud Run URLへ`/health`を付け、`200 OK`と`ok`が返ることを確認します。この手動手順は初回のcontainer・接続確認用です。継続的なデプロイでは、Artifact Registry、Cloud Run、IAM、Secret ManagerをTerraformで管理し、[`backend-deploy.yml`](../.github/workflows/backend-deploy.yml)がcommit SHAごとのimageをbuildして新しいrevisionをデプロイします。詳しいフローとrollback方法は[`infra/terraform/README.md`](../infra/terraform/README.md)を参照してください。
 
 ## 主なMake target
 

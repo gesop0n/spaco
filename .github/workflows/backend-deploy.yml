@@ -1,0 +1,140 @@
+name: Deploy backend
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - "backend/**"
+      - ".github/workflows/backend-*.yml"
+      - "flake.nix"
+      - "flake.lock"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  id-token: write
+
+concurrency:
+  group: backend-production
+  cancel-in-progress: false
+
+env:
+  PROJECT_ID: spaco-prod
+  REGION: asia-northeast1
+  ARTIFACT_REPOSITORY: spaco-backend
+  CLOUD_RUN_SERVICE: spaco-api
+  WORKLOAD_IDENTITY_PROVIDER: projects/237242555322/locations/global/workloadIdentityPools/github-actions/providers/github
+  DEPLOYER_SERVICE_ACCOUNT: spaco-api-deployer@spaco-prod.iam.gserviceaccount.com
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    environment: production
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+
+      - name: Install Nix
+        uses: cachix/install-nix-action@v31
+
+      - name: Test
+        working-directory: backend
+        run: nix develop .. -c go test ./...
+
+      - name: Vet
+        working-directory: backend
+        run: nix develop .. -c go vet ./...
+
+      - name: Prepare release metadata
+        id: release
+        shell: bash
+        run: |
+          short_sha="${GITHUB_SHA:0:7}"
+          revision_suffix="${short_sha}-${GITHUB_RUN_NUMBER}-${GITHUB_RUN_ATTEMPT}"
+          echo "revision_suffix=${revision_suffix}" >> "${GITHUB_OUTPUT}"
+          echo "revision=${CLOUD_RUN_SERVICE}-${revision_suffix}" >> "${GITHUB_OUTPUT}"
+
+      - name: Authenticate to Google Cloud
+        id: auth
+        uses: google-github-actions/auth@v3
+        with:
+          project_id: ${{ env.PROJECT_ID }}
+          workload_identity_provider: ${{ env.WORKLOAD_IDENTITY_PROVIDER }}
+          service_account: ${{ env.DEPLOYER_SERVICE_ACCOUNT }}
+          token_format: access_token
+
+      - name: Set up Google Cloud CLI
+        uses: google-github-actions/setup-gcloud@v3
+
+      - name: Log in to Artifact Registry
+        uses: docker/login-action@v4
+        with:
+          registry: ${{ env.REGION }}-docker.pkg.dev
+          username: oauth2accesstoken
+          password: ${{ steps.auth.outputs.access_token }}
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v4
+
+      - name: Build and push image
+        id: build
+        uses: docker/build-push-action@v7
+        with:
+          context: backend
+          push: true
+          tags: ${{ env.REGION }}-docker.pkg.dev/${{ env.PROJECT_ID }}/${{ env.ARTIFACT_REPOSITORY }}/${{ env.CLOUD_RUN_SERVICE }}:${{ github.sha }}
+          cache-from: type=gha,scope=backend
+          cache-to: type=gha,mode=max,scope=backend
+
+      - name: Deploy candidate revision
+        uses: google-github-actions/deploy-cloudrun@v3
+        with:
+          project_id: ${{ env.PROJECT_ID }}
+          region: ${{ env.REGION }}
+          service: ${{ env.CLOUD_RUN_SERVICE }}
+          image: ${{ env.REGION }}-docker.pkg.dev/${{ env.PROJECT_ID }}/${{ env.ARTIFACT_REPOSITORY }}/${{ env.CLOUD_RUN_SERVICE }}@${{ steps.build.outputs.digest }}
+          suffix: ${{ steps.release.outputs.revision_suffix }}
+          tag: candidate
+          no_traffic: true
+          skip_default_labels: true
+
+      - name: Resolve candidate URL
+        id: candidate
+        shell: bash
+        run: |
+          candidate_url="$(
+            gcloud run services describe "${CLOUD_RUN_SERVICE}" \
+              --project "${PROJECT_ID}" \
+              --region "${REGION}" \
+              --format='value(status.traffic[?tag=candidate].url)'
+          )"
+          if [[ -z "${candidate_url}" ]]; then
+            echo "Candidate URL was not found" >&2
+            exit 1
+          fi
+          echo "url=${candidate_url}" >> "${GITHUB_OUTPUT}"
+
+      - name: Smoke test candidate
+        run: curl --fail --show-error --silent --retry 5 --retry-all-errors --retry-delay 2 "${{ steps.candidate.outputs.url }}/health"
+
+      - name: Promote candidate revision
+        run: |
+          gcloud run services update-traffic "${CLOUD_RUN_SERVICE}" \
+            --project "${PROJECT_ID}" \
+            --region "${REGION}" \
+            --to-revisions "${{ steps.release.outputs.revision }}=100" \
+            --quiet
+
+      - name: Remove candidate tag
+        run: |
+          gcloud run services update-traffic "${CLOUD_RUN_SERVICE}" \
+            --project "${PROJECT_ID}" \
+            --region "${REGION}" \
+            --remove-tags candidate \
+            --quiet
+
+      - name: Verify production
+        run: curl --fail --show-error --silent --retry 5 --retry-all-errors --retry-delay 2 "https://spaco-api-5n3rhvlcxa-an.a.run.app/health"

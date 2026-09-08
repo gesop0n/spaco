@@ -27,6 +27,7 @@
             pkgs.pnpm_11
             pkgs.google-cloud-sdk
             pkgs.terraform
+            pkgs.actionlint
 
             # Backend
             pkgs.go_1_25

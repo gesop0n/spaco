@@ -1,0 +1,32 @@
+name: Backend check
+
+on:
+  pull_request:
+    paths:
+      - "backend/**"
+      - ".github/workflows/backend-*.yml"
+      - "flake.nix"
+      - "flake.lock"
+
+permissions:
+  contents: read
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+
+      - name: Install Nix
+        uses: cachix/install-nix-action@v31
+
+      - name: Test
+        working-directory: backend
+        run: nix develop .. -c go test ./...
+
+      - name: Vet
+        working-directory: backend
+        run: nix develop .. -c go vet ./...

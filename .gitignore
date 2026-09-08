@@ -7,6 +7,7 @@
 
 # Runtime Settings
 .mise.toml
+gha-creds-*.json
 
 
 # Environment Variables
