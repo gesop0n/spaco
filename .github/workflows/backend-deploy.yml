@@ -34,6 +34,29 @@ jobs:
       DEPLOYER_SERVICE_ACCOUNT: ${{ vars.DEPLOYER_SERVICE_ACCOUNT }}
 
     steps:
+      - name: Validate deployment configuration
+        shell: bash
+        run: |
+          required_variables=(
+            PROJECT_ID
+            REGION
+            ARTIFACT_REPOSITORY
+            CLOUD_RUN_SERVICE
+            CLOUD_RUN_SERVICE_URL
+            WORKLOAD_IDENTITY_PROVIDER
+            DEPLOYER_SERVICE_ACCOUNT
+          )
+          missing=false
+          for variable in "${required_variables[@]}"; do
+            if [[ -z "${!variable:-}" ]]; then
+              echo "::error::Production variable ${variable} is not configured"
+              missing=true
+            fi
+          done
+          if [[ "${missing}" == "true" ]]; then
+            exit 1
+          fi
+
       - name: Checkout
         uses: actions/checkout@v7
 
@@ -109,7 +132,7 @@ jobs:
             gcloud run services describe "${CLOUD_RUN_SERVICE}" \
               --project "${PROJECT_ID}" \
               --region "${REGION}" \
-              --format='value(status.traffic[?tag=candidate].url)'
+              --format='value(status.traffic.url)'
           )"
           if [[ -z "${candidate_url}" ]]; then
             echo "Candidate URL was not found" >&2
