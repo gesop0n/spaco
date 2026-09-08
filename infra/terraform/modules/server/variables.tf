@@ -23,6 +23,61 @@ variable "artifact_repository_id" {
   type        = string
 }
 
+variable "release_artifact_repository_id" {
+  description = "Artifact Registry repository used by the backend release pipeline"
+  type        = string
+}
+
+variable "deployer_service_account_id" {
+  description = "Account ID of the GitHub Actions deployment service account"
+  type        = string
+}
+
+variable "workload_identity_pool_id" {
+  description = "Workload Identity Pool ID used by GitHub Actions"
+  type        = string
+}
+
+variable "workload_identity_provider_id" {
+  description = "GitHub OIDC provider ID in the Workload Identity Pool"
+  type        = string
+}
+
+variable "github_repository" {
+  description = "GitHub repository in owner/name format"
+  type        = string
+
+  validation {
+    condition     = can(regex("^[^/]+/[^/]+$", var.github_repository))
+    error_message = "github_repository must use the owner/name format."
+  }
+}
+
+variable "github_repository_id" {
+  description = "Immutable numeric GitHub repository ID"
+  type        = string
+
+  validation {
+    condition     = can(regex("^[1-9][0-9]*$", var.github_repository_id))
+    error_message = "github_repository_id must be a positive numeric GitHub repository ID."
+  }
+}
+
+variable "github_ref" {
+  description = "Only Git ref allowed to assume the deployment identity"
+  type        = string
+
+  validation {
+    condition     = startswith(var.github_ref, "refs/heads/")
+    error_message = "github_ref must be a fully qualified branch ref."
+  }
+}
+
+variable "github_environment" {
+  description = "Only GitHub environment allowed to assume the deployment identity"
+  type        = string
+}
+
 variable "runtime_service_account_id" {
   description = "Account ID of the Cloud Run runtime service account"
   type        = string

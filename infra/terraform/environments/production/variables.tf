@@ -19,7 +19,47 @@ variable "cloud_run_service_name" {
 }
 
 variable "artifact_repository_id" {
-  description = "Artifact Registry repository ID"
+  description = "Artifact Registry repository ID used by Cloud Run source deploys"
+  type        = string
+}
+
+variable "release_artifact_repository_id" {
+  description = "Artifact Registry repository ID used by the release pipeline"
+  type        = string
+}
+
+variable "deployer_service_account_id" {
+  description = "GitHub Actions deployment service account ID"
+  type        = string
+}
+
+variable "workload_identity_pool_id" {
+  description = "Workload Identity Pool ID used by GitHub Actions"
+  type        = string
+}
+
+variable "workload_identity_provider_id" {
+  description = "GitHub OIDC provider ID in the Workload Identity Pool"
+  type        = string
+}
+
+variable "github_repository" {
+  description = "GitHub repository in owner/name format"
+  type        = string
+}
+
+variable "github_repository_id" {
+  description = "Immutable numeric GitHub repository ID"
+  type        = string
+}
+
+variable "github_ref" {
+  description = "Only Git ref allowed to assume the deployment identity"
+  type        = string
+}
+
+variable "github_environment" {
+  description = "Only GitHub environment allowed to assume the deployment identity"
   type        = string
 }
 
