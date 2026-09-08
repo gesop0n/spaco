@@ -17,6 +17,7 @@ func TestAuthenticateExecute(t *testing.T) {
 	var verifiedToken string
 	var resolvedIssuer string
 	var resolvedSubject string
+	var resolvedEmail string
 
 	authenticate, err := NewAuthenticate(
 		TokenVerifierFunc(func(_ context.Context, token string) (Identity, error) {
@@ -27,9 +28,11 @@ func TestAuthenticateExecute(t *testing.T) {
 			_ context.Context,
 			issuer string,
 			subject string,
+			email string,
 		) (identifier.UserID, error) {
 			resolvedIssuer = issuer
 			resolvedSubject = subject
+			resolvedEmail = email
 			return wantUserID, nil
 		}),
 	)
@@ -55,6 +58,9 @@ func TestAuthenticateExecute(t *testing.T) {
 			identity.Issuer(),
 			identity.Subject(),
 		)
+	}
+	if resolvedEmail != identity.Email() {
+		t.Fatalf("resolved email = %q, want %q", resolvedEmail, identity.Email())
 	}
 }
 
@@ -154,6 +160,7 @@ func resolverReturning(userID identifier.UserID, err error) authentication.IUser
 		context.Context,
 		string,
 		string,
+		string,
 	) (identifier.UserID, error) {
 		return userID, err
 	})
@@ -161,7 +168,7 @@ func resolverReturning(userID identifier.UserID, err error) authentication.IUser
 
 func mustIdentity(t *testing.T, issuer, subject string) Identity {
 	t.Helper()
-	identity, err := NewIdentity(issuer, subject)
+	identity, err := NewIdentity(issuer, subject, "user@example.com")
 	if err != nil {
 		t.Fatalf("NewIdentity() error = %v", err)
 	}

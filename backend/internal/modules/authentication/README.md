@@ -18,7 +18,7 @@ RPC adapter ── Bearer tokenを抽出
 usecase.Authenticate.Execute
         │
         ├── ITokenVerifier
-        │      └── Supabase JWT・JWKS検証
+        │      └── Supabase JWT・JWKSとemail claimの検証
         │
         └── IUserResolver
                └── account moduleがUserIDを解決

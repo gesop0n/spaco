@@ -27,8 +27,9 @@ func (u *ResolveUser) Execute(
 	ctx context.Context,
 	issuer string,
 	subject string,
+	email string,
 ) (identifier.UserID, error) {
-	identity, err := domain.NewAuthIdentity(issuer, subject)
+	identity, err := domain.NewAuthIdentity(issuer, subject, email)
 	if err != nil {
 		return identifier.UserID{}, err
 	}

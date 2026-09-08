@@ -47,7 +47,7 @@ func TestUpdateProfileExecuteWithoutAtCoderID(t *testing.T) {
 				t.Fatal("blank AtCoder ID must be unset")
 			}
 			username := profile.Username()
-			return domain.RehydrateAccount(gotID, &username, nil, profile.TimeZone())
+			return domain.RehydrateAccount(gotID, "user@example.com", &username, nil, profile.TimeZone())
 		},
 	})
 	if err != nil {

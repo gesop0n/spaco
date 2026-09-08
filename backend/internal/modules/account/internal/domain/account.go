@@ -12,6 +12,7 @@ import (
 
 var (
 	ErrInvalidAccount   = errors.New("invalid account")
+	ErrInvalidEmail     = errors.New("invalid email")
 	ErrInvalidAtCoderID = errors.New("invalid atcoder id")
 	ErrInvalidTimeZone  = errors.New("invalid time zone")
 )
@@ -21,28 +22,34 @@ const defaultTimeZone = "Asia/Tokyo"
 // Accountは、アプリ内ユーザーと復習に必要なprofileを保持する集約である。
 type Account struct {
 	id        identifier.UserID
+	email     string
 	username  *string
 	atCoderID *string
 	timeZone  string
 }
 
 // NewAccountは、外部identityを初めて確認したユーザーの未設定Accountを生成する。
-func NewAccount(id identifier.UserID) (Account, error) {
+func NewAccount(id identifier.UserID, email string) (Account, error) {
 	if id.IsZero() {
 		return Account{}, fmt.Errorf("%w: user id is required", ErrInvalidAccount)
 	}
+	email = strings.TrimSpace(email)
+	if email == "" {
+		return Account{}, fmt.Errorf("%w: value is required", ErrInvalidEmail)
+	}
 
-	return Account{id: id, timeZone: defaultTimeZone}, nil
+	return Account{id: id, email: email, timeZone: defaultTimeZone}, nil
 }
 
 // RehydrateAccountは、repositoryから取得した値をAccountへ復元する。
 func RehydrateAccount(
 	id identifier.UserID,
+	email string,
 	username *string,
 	atCoderID *string,
 	timeZone string,
 ) (Account, error) {
-	account, err := NewAccount(id)
+	account, err := NewAccount(id, email)
 	if err != nil {
 		return Account{}, err
 	}
@@ -75,6 +82,7 @@ func RehydrateAccount(
 }
 
 func (a Account) ID() identifier.UserID { return a.id }
+func (a Account) Email() string         { return a.email }
 
 func (a Account) Username() (string, bool) {
 	if a.username == nil {

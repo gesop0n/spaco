@@ -18,18 +18,21 @@ var (
 type Identity struct {
 	issuer  string
 	subject string
+	email   string
 }
 
-// NewIdentityは、検証済みclaimのissuerとsubjectからIdentityを生成する。
-func NewIdentity(issuer, subject string) (Identity, error) {
+// NewIdentityは、検証済みclaimのissuer、subject、emailからIdentityを生成する。
+func NewIdentity(issuer, subject, email string) (Identity, error) {
 	issuer = strings.TrimSpace(issuer)
 	subject = strings.TrimSpace(subject)
-	if issuer == "" || subject == "" {
-		return Identity{}, fmt.Errorf("%w: issuer and subject are required", ErrInvalidIdentity)
+	email = strings.TrimSpace(email)
+	if issuer == "" || subject == "" || email == "" {
+		return Identity{}, fmt.Errorf("%w: issuer, subject, and email are required", ErrInvalidIdentity)
 	}
 
-	return Identity{issuer: issuer, subject: subject}, nil
+	return Identity{issuer: issuer, subject: subject, email: email}, nil
 }
 
 func (i Identity) Issuer() string  { return i.issuer }
 func (i Identity) Subject() string { return i.subject }
+func (i Identity) Email() string   { return i.email }

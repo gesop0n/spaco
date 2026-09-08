@@ -13,20 +13,23 @@ var ErrInvalidAuthIdentity = errors.New("invalid auth identity")
 type AuthIdentity struct {
 	issuer  string
 	subject string
+	email   string
 }
 
-func NewAuthIdentity(issuer, subject string) (AuthIdentity, error) {
+func NewAuthIdentity(issuer, subject, email string) (AuthIdentity, error) {
 	issuer = strings.TrimSpace(issuer)
 	subject = strings.TrimSpace(subject)
-	if issuer == "" || subject == "" {
+	email = strings.TrimSpace(email)
+	if issuer == "" || subject == "" || email == "" {
 		return AuthIdentity{}, fmt.Errorf(
-			"%w: issuer and subject are required",
+			"%w: issuer, subject, and email are required",
 			ErrInvalidAuthIdentity,
 		)
 	}
 
-	return AuthIdentity{issuer: issuer, subject: subject}, nil
+	return AuthIdentity{issuer: issuer, subject: subject, email: email}, nil
 }
 
 func (i AuthIdentity) Issuer() string  { return i.issuer }
 func (i AuthIdentity) Subject() string { return i.subject }
+func (i AuthIdentity) Email() string   { return i.email }

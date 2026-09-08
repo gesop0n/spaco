@@ -64,7 +64,9 @@ type Account struct {
 	TimeZone       string                 `protobuf:"bytes,3,opt,name=time_zone,json=timeZone,proto3" json:"time_zone,omitempty"`
 	SetupCompleted bool                   `protobuf:"varint,4,opt,name=setup_completed,json=setupCompleted,proto3" json:"setup_completed,omitempty"`
 	// アプリ内の表示名。初期設定前は未設定。
-	Username      *string `protobuf:"bytes,5,opt,name=username,proto3,oneof" json:"username,omitempty"`
+	Username *string `protobuf:"bytes,5,opt,name=username,proto3,oneof" json:"username,omitempty"`
+	// 認証時に確定し、プロフィールからは変更しないメールアドレス。
+	Email         string `protobuf:"bytes,6,opt,name=email,proto3" json:"email,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -130,6 +132,13 @@ func (x *Account) GetSetupCompleted() bool {
 func (x *Account) GetUsername() string {
 	if x != nil && x.Username != nil {
 		return *x.Username
+	}
+	return ""
+}
+
+func (x *Account) GetEmail() string {
+	if x != nil {
+		return x.Email
 	}
 	return ""
 }
@@ -289,14 +298,15 @@ var File_spaco_account_v1_account_proto protoreflect.FileDescriptor
 const file_spaco_account_v1_account_proto_rawDesc = "" +
 	"\n" +
 	"\x1espaco/account/v1/account.proto\x12\x10spaco.account.v1\"\x1a\n" +
-	"\x18GetCurrentAccountRequest\"\xc0\x01\n" +
+	"\x18GetCurrentAccountRequest\"\xd6\x01\n" +
 	"\aAccount\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\tR\x02id\x12\"\n" +
 	"\n" +
 	"atcoder_id\x18\x02 \x01(\tH\x00R\tatcoderId\x88\x01\x01\x12\x1b\n" +
 	"\ttime_zone\x18\x03 \x01(\tR\btimeZone\x12'\n" +
 	"\x0fsetup_completed\x18\x04 \x01(\bR\x0esetupCompleted\x12\x1f\n" +
-	"\busername\x18\x05 \x01(\tH\x01R\busername\x88\x01\x01B\r\n" +
+	"\busername\x18\x05 \x01(\tH\x01R\busername\x88\x01\x01\x12\x14\n" +
+	"\x05email\x18\x06 \x01(\tR\x05emailB\r\n" +
 	"\v_atcoder_idB\v\n" +
 	"\t_username\"P\n" +
 	"\x19GetCurrentAccountResponse\x123\n" +

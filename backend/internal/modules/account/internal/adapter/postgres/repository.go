@@ -71,12 +71,13 @@ func (r *Repository) ResolveOrCreateByAuthIdentity(
 		return identifier.UserID{}, fmt.Errorf("find auth identity: %w", err)
 	}
 
-	newAccount, err := domain.NewAccount(identifier.NewUserID())
+	newAccount, err := domain.NewAccount(identifier.NewUserID(), identity.Email())
 	if err != nil {
 		return identifier.UserID{}, fmt.Errorf("create account: %w", err)
 	}
 	if err := transactionQueries.CreateAccount(ctx, accountsqlc.CreateAccountParams{
 		ID:       newAccount.ID().UUID(),
+		Email:    newAccount.Email(),
 		TimeZone: newAccount.TimeZone(),
 	}); err != nil {
 		return identifier.UserID{}, fmt.Errorf("insert account: %w", err)
@@ -124,7 +125,7 @@ func (r *Repository) FindByID(
 	if err != nil {
 		return domain.Account{}, fmt.Errorf("find account by id: %w", err)
 	}
-	return rehydrateAccount(row.ID, row.Username, row.AtcoderID, row.TimeZone)
+	return rehydrateAccount(row.ID, row.Email, row.Username, row.AtcoderID, row.TimeZone)
 }
 
 func (r *Repository) UpdateProfile(
@@ -152,11 +153,12 @@ func (r *Repository) UpdateProfile(
 	if err != nil {
 		return domain.Account{}, fmt.Errorf("update account profile: %w", err)
 	}
-	return rehydrateAccount(row.ID, row.Username, row.AtcoderID, row.TimeZone)
+	return rehydrateAccount(row.ID, row.Email, row.Username, row.AtcoderID, row.TimeZone)
 }
 
 func rehydrateAccount(
 	userIDValue uuid.UUID,
+	email string,
 	username *string,
 	atCoderID *string,
 	timeZone string,
@@ -165,7 +167,7 @@ func rehydrateAccount(
 	if err != nil {
 		return domain.Account{}, fmt.Errorf("parse stored user id: %w", err)
 	}
-	account, err := domain.RehydrateAccount(userID, username, atCoderID, timeZone)
+	account, err := domain.RehydrateAccount(userID, email, username, atCoderID, timeZone)
 	if err != nil {
 		return domain.Account{}, fmt.Errorf("rehydrate stored account: %w", err)
 	}

@@ -69,6 +69,7 @@ internal/
 ```go
 type Account struct {
 	id        identifier.UserID
+	email     string
 	username  *string
 	atCoderID *string
 	timeZone  string
@@ -85,8 +86,9 @@ type Account struct {
 
 ### `AuthIdentity`
 
-外部認証サービスの `issuer + subject` を保持する値オブジェクト。
-空文字を許可せず、アカウント作成後は原則として変更しない。
+外部認証サービスの `issuer + subject` と、検証済みのメールアドレスを保持する値オブジェクト。
+いずれも空文字を許可せず、アカウント作成時にメールアドレスをAccountへ保存する。
+外部identityの一意性は引き続き`issuer + subject`で判定する。
 
 複数の認証方法を同じアカウントへリンクする要件が生まれるまでは、複数件を扱うための
 抽象化を先に追加しない。
@@ -123,7 +125,7 @@ IANA Time Zone Database の名前として生成時に検証する。
 ### `ResolveUser`
 
 検証済みの`AuthIdentity`に対応する`identifier.UserID`を返す。対応がない場合は、
-未設定Accountとidentityの対応を同じtransaction内で自動作成する。同時requestは
+認証済みメールアドレスを持つ未設定Accountとidentityの対応を同じtransaction内で自動作成する。同時requestは
 `auth_identities`の複合主キーで直列化し、重複して作ったAccountを残さない。
 
 ### `GetCurrentAccount`

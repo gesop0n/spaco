@@ -35,7 +35,7 @@ func TestRepositoryIntegration(t *testing.T) {
 		t.Fatalf("NewRepository() error = %v", err)
 	}
 	issuer := fmt.Sprintf("https://integration-%s.test/auth/v1", uuid.NewString())
-	identity, err := domain.NewAuthIdentity(issuer, "subject-1")
+	identity, err := domain.NewAuthIdentity(issuer, "subject-1", "integration@example.com")
 	if err != nil {
 		t.Fatalf("NewAuthIdentity() error = %v", err)
 	}
@@ -114,6 +114,9 @@ func TestRepositoryIntegration(t *testing.T) {
 	}
 	if account.SetupCompleted() {
 		t.Fatal("new account SetupCompleted() = true, want false")
+	}
+	if account.Email() != identity.Email() {
+		t.Fatalf("Email() = %q, want %q", account.Email(), identity.Email())
 	}
 
 	// AtCoder IDなしで初期設定し、追加・解除とユーザー名変更を永続化できる。

@@ -11,7 +11,7 @@ import (
 func TestNewAccountCreatesIncompleteAccount(t *testing.T) {
 	t.Parallel()
 
-	account, err := NewAccount(identifier.NewUserID())
+	account, err := NewAccount(identifier.NewUserID(), "user@example.com")
 	if err != nil {
 		t.Fatalf("NewAccount() error = %v", err)
 	}
@@ -21,11 +21,23 @@ func TestNewAccountCreatesIncompleteAccount(t *testing.T) {
 	if account.TimeZone() != "Asia/Tokyo" {
 		t.Fatalf("TimeZone() = %q, want Asia/Tokyo", account.TimeZone())
 	}
+	if account.Email() != "user@example.com" {
+		t.Fatalf("Email() = %q, want user@example.com", account.Email())
+	}
 	if _, ok := account.AtCoderID(); ok {
 		t.Fatal("AtCoderID() exists, want unset")
 	}
 	if _, ok := account.Username(); ok {
 		t.Fatal("Username() exists, want unset")
+	}
+}
+
+func TestNewAccountRequiresEmail(t *testing.T) {
+	t.Parallel()
+
+	_, err := NewAccount(identifier.NewUserID(), " \t ")
+	if !errors.Is(err, ErrInvalidEmail) {
+		t.Fatalf("NewAccount() error = %v, want ErrInvalidEmail", err)
 	}
 }
 
@@ -92,7 +104,13 @@ func TestRehydrateAccountRestoresSetupState(t *testing.T) {
 	} {
 		t.Run(test.name, func(t *testing.T) {
 			t.Parallel()
-			account, err := RehydrateAccount(identifier.NewUserID(), test.username, test.atCoderID, "UTC")
+			account, err := RehydrateAccount(
+				identifier.NewUserID(),
+				"user@example.com",
+				test.username,
+				test.atCoderID,
+				"UTC",
+			)
 			if err != nil {
 				t.Fatalf("RehydrateAccount() error = %v", err)
 			}

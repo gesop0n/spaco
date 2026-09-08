@@ -44,7 +44,13 @@ func TestHandlerGetCurrentAccountReturnsAuthenticatedUser(t *testing.T) {
 	userID := identifier.NewUserID()
 	username := "太郎"
 	atCoderID := "tourist"
-	account, err := domain.RehydrateAccount(userID, &username, &atCoderID, "Asia/Tokyo")
+	account, err := domain.RehydrateAccount(
+		userID,
+		"user@example.com",
+		&username,
+		&atCoderID,
+		"Asia/Tokyo",
+	)
 	if err != nil {
 		t.Fatalf("RehydrateAccount() error = %v", err)
 	}
@@ -79,6 +85,9 @@ func TestHandlerGetCurrentAccountReturnsAuthenticatedUser(t *testing.T) {
 	}
 	if response.Msg.Account.GetUsername() != username {
 		t.Fatalf("username = %q, want %q", response.Msg.Account.GetUsername(), username)
+	}
+	if response.Msg.Account.GetEmail() != "user@example.com" {
+		t.Fatalf("email = %q, want user@example.com", response.Msg.Account.GetEmail())
 	}
 }
 
@@ -130,7 +139,7 @@ func TestHandlerUpdateProfileWithoutAtCoderID(t *testing.T) {
 			if gotID != userID || username != "復習 太郎" || atCoderID != "" || timeZone != "UTC" {
 				t.Fatalf("Execute arguments = %v, %q, %q, %q", gotID, username, atCoderID, timeZone)
 			}
-			return domain.RehydrateAccount(gotID, &username, nil, timeZone)
+			return domain.RehydrateAccount(gotID, "user@example.com", &username, nil, timeZone)
 		},
 	})
 	if err != nil {

@@ -13,7 +13,7 @@ import (
 )
 
 // ResolveUserFuncは、外部identityをアプリ内UserIDへ変換する関数である。
-type ResolveUserFunc func(context.Context, string, string) (identifier.UserID, error)
+type ResolveUserFunc func(context.Context, string, string, string) (identifier.UserID, error)
 
 // Moduleは、組み立て済みaccount moduleの公開窓口である。
 // use caseやrepositoryの具象型はmodule外へ公開しない。
@@ -40,8 +40,9 @@ func (m *Module) ResolveUser(
 	ctx context.Context,
 	issuer string,
 	subject string,
+	email string,
 ) (identifier.UserID, error) {
-	return m.resolveUser(ctx, issuer, subject)
+	return m.resolveUser(ctx, issuer, subject, email)
 }
 
 // ConnectHandlerは、AccountServiceをmountするpathとHTTP handlerを返す。

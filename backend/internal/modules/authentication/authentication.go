@@ -15,16 +15,18 @@ type IUserResolver interface {
 		ctx context.Context,
 		issuer string,
 		subject string,
+		email string,
 	) (identifier.UserID, error)
 }
 
 // UserResolverFunc は、関数をIUserResolverとして利用できるようにするadapterである。
-type UserResolverFunc func(context.Context, string, string) (identifier.UserID, error)
+type UserResolverFunc func(context.Context, string, string, string) (identifier.UserID, error)
 
 func (f UserResolverFunc) ResolveUser(
 	ctx context.Context,
 	issuer string,
 	subject string,
+	email string,
 ) (identifier.UserID, error) {
-	return f(ctx, issuer, subject)
+	return f(ctx, issuer, subject, email)
 }

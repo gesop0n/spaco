@@ -12,17 +12,18 @@ import (
 )
 
 const createAccount = `-- name: CreateAccount :exec
-INSERT INTO accounts (id, time_zone)
-VALUES ($1, $2)
+INSERT INTO accounts (id, email, time_zone)
+VALUES ($1, $2, $3)
 `
 
 type CreateAccountParams struct {
 	ID       uuid.UUID
+	Email    string
 	TimeZone string
 }
 
 func (q *Queries) CreateAccount(ctx context.Context, arg CreateAccountParams) error {
-	_, err := q.db.Exec(ctx, createAccount, arg.ID, arg.TimeZone)
+	_, err := q.db.Exec(ctx, createAccount, arg.ID, arg.Email, arg.TimeZone)
 	return err
 }
 
@@ -57,13 +58,14 @@ func (q *Queries) DeleteAccount(ctx context.Context, id uuid.UUID) error {
 }
 
 const findAccountByID = `-- name: FindAccountByID :one
-SELECT id, username, atcoder_id, time_zone
+SELECT id, email, username, atcoder_id, time_zone
 FROM accounts
 WHERE id = $1
 `
 
 type FindAccountByIDRow struct {
 	ID        uuid.UUID
+	Email     string
 	Username  *string
 	AtcoderID *string
 	TimeZone  string
@@ -74,6 +76,7 @@ func (q *Queries) FindAccountByID(ctx context.Context, id uuid.UUID) (FindAccoun
 	var i FindAccountByIDRow
 	err := row.Scan(
 		&i.ID,
+		&i.Email,
 		&i.Username,
 		&i.AtcoderID,
 		&i.TimeZone,
@@ -107,7 +110,7 @@ SET
     username = $4,
     updated_at = now()
 WHERE id = $1
-RETURNING id, username, atcoder_id, time_zone
+RETURNING id, email, username, atcoder_id, time_zone
 `
 
 type UpdateAccountProfileParams struct {
@@ -119,6 +122,7 @@ type UpdateAccountProfileParams struct {
 
 type UpdateAccountProfileRow struct {
 	ID        uuid.UUID
+	Email     string
 	Username  *string
 	AtcoderID *string
 	TimeZone  string
@@ -134,6 +138,7 @@ func (q *Queries) UpdateAccountProfile(ctx context.Context, arg UpdateAccountPro
 	var i UpdateAccountProfileRow
 	err := row.Scan(
 		&i.ID,
+		&i.Email,
 		&i.Username,
 		&i.AtcoderID,
 		&i.TimeZone,

@@ -52,6 +52,7 @@ func TestTokenVerifier(t *testing.T) {
 	validToken := signTestToken(t, privateKey, tokenClaims{
 		issuer:     issuer,
 		subject:    "external-user-id",
+		email:      "user@example.com",
 		audience:   DefaultAudience,
 		expiration: time.Now().Add(time.Hour),
 	})
@@ -65,6 +66,9 @@ func TestTokenVerifier(t *testing.T) {
 	if identity.Subject() != "external-user-id" {
 		t.Fatalf("Identity.Subject() = %q, want %q", identity.Subject(), "external-user-id")
 	}
+	if identity.Email() != "user@example.com" {
+		t.Fatalf("Identity.Email() = %q, want %q", identity.Email(), "user@example.com")
+	}
 	if requests.Load() == 0 {
 		t.Fatal("JWKS endpoint was not requested during verifier construction")
 	}
@@ -76,35 +80,42 @@ func TestTokenVerifier(t *testing.T) {
 		{
 			name: "wrong issuer",
 			claims: tokenClaims{
-				issuer: "https://another-project.supabase.co/auth/v1", subject: "external-user-id",
+				issuer: "https://another-project.supabase.co/auth/v1", subject: "external-user-id", email: "user@example.com",
 				audience: DefaultAudience, expiration: time.Now().Add(time.Hour),
 			},
 		},
 		{
 			name: "wrong audience",
 			claims: tokenClaims{
-				issuer: issuer, subject: "external-user-id", audience: "anon",
+				issuer: issuer, subject: "external-user-id", email: "user@example.com", audience: "anon",
 				expiration: time.Now().Add(time.Hour),
 			},
 		},
 		{
 			name: "expired",
 			claims: tokenClaims{
-				issuer: issuer, subject: "external-user-id", audience: DefaultAudience,
+				issuer: issuer, subject: "external-user-id", email: "user@example.com", audience: DefaultAudience,
 				expiration: time.Now().Add(-time.Minute),
 			},
 		},
 		{
 			name: "missing subject",
 			claims: tokenClaims{
-				issuer: issuer, audience: DefaultAudience,
+				issuer: issuer, email: "user@example.com", audience: DefaultAudience,
 				expiration: time.Now().Add(time.Hour),
 			},
 		},
 		{
 			name: "missing expiration",
 			claims: tokenClaims{
+				issuer: issuer, subject: "external-user-id", email: "user@example.com", audience: DefaultAudience,
+			},
+		},
+		{
+			name: "missing email",
+			claims: tokenClaims{
 				issuer: issuer, subject: "external-user-id", audience: DefaultAudience,
+				expiration: time.Now().Add(time.Hour),
 			},
 		},
 	}
@@ -154,7 +165,7 @@ func TestTokenVerifierRejectsWrongSignature(t *testing.T) {
 	t.Cleanup(func() { _ = verifier.Close(context.Background()) })
 
 	claims := tokenClaims{
-		issuer: issuer, subject: "external-user-id", audience: DefaultAudience,
+		issuer: issuer, subject: "external-user-id", email: "user@example.com", audience: DefaultAudience,
 		expiration: time.Now().Add(time.Hour),
 	}
 	if _, err := verifier.Verify(context.Background(), signTestToken(t, untrustedKey, claims)); !errors.Is(err, usecase.ErrInvalidToken) {
@@ -205,6 +216,7 @@ func TestNewTokenVerifierValidatesConfig(t *testing.T) {
 type tokenClaims struct {
 	issuer     string
 	subject    string
+	email      string
 	audience   string
 	expiration time.Time
 }
@@ -258,6 +270,9 @@ func signTestToken(t *testing.T, privateKey jwk.Key, claims tokenClaims) string 
 	}
 	if !claims.expiration.IsZero() {
 		builder.Expiration(claims.expiration)
+	}
+	if claims.email != "" {
+		builder.Claim("email", claims.email)
 	}
 	token, err := builder.Build()
 	if err != nil {

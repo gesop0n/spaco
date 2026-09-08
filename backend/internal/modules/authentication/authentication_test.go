@@ -26,12 +26,15 @@ func TestUserResolverFunc(t *testing.T) {
 	t.Parallel()
 
 	want := identifier.NewUserID()
-	resolver := UserResolverFunc(func(_ context.Context, issuer, subject string) (identifier.UserID, error) {
+	resolver := UserResolverFunc(func(_ context.Context, issuer, subject, email string) (identifier.UserID, error) {
 		if issuer != "https://example.supabase.co/auth/v1" {
 			t.Fatalf("issuer = %q", issuer)
 		}
 		if subject != "external-user-id" {
 			t.Fatalf("subject = %q", subject)
+		}
+		if email != "user@example.com" {
+			t.Fatalf("email = %q", email)
 		}
 		return want, nil
 	})
@@ -40,6 +43,7 @@ func TestUserResolverFunc(t *testing.T) {
 		context.Background(),
 		"https://example.supabase.co/auth/v1",
 		"external-user-id",
+		"user@example.com",
 	)
 	if err != nil {
 		t.Fatalf("ResolveUser() error = %v", err)

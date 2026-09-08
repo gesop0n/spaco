@@ -122,6 +122,7 @@ func (v *TokenVerifier) Verify(
 		jwt.WithRequiredClaim(jwt.SubjectKey),
 		jwt.WithRequiredClaim(jwt.AudienceKey),
 		jwt.WithRequiredClaim(jwt.ExpirationKey),
+		jwt.WithRequiredClaim("email"),
 	)
 	if err != nil {
 		return usecase.Identity{}, fmt.Errorf("%w: %v", usecase.ErrInvalidToken, err)
@@ -129,11 +130,12 @@ func (v *TokenVerifier) Verify(
 
 	issuer, issuerOK := token.Issuer()
 	subject, subjectOK := token.Subject()
-	if !issuerOK || !subjectOK {
+	var email string
+	if !issuerOK || !subjectOK || token.Get("email", &email) != nil {
 		return usecase.Identity{}, usecase.ErrInvalidToken
 	}
 
-	identity, err := usecase.NewIdentity(issuer, subject)
+	identity, err := usecase.NewIdentity(issuer, subject, email)
 	if err != nil {
 		return usecase.Identity{}, fmt.Errorf("%w: %v", usecase.ErrInvalidToken, err)
 	}

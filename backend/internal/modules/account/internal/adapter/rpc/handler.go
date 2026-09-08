@@ -104,6 +104,7 @@ func authenticatedUserID(ctx context.Context) (identifier.UserID, error) {
 func accountMessage(account domain.Account) *accountv1.Account {
 	message := &accountv1.Account{
 		Id:             account.ID().String(),
+		Email:          account.Email(),
 		TimeZone:       account.TimeZone(),
 		SetupCompleted: account.SetupCompleted(),
 	}

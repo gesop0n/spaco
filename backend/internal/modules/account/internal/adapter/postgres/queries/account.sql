@@ -4,8 +4,8 @@ FROM auth_identities
 WHERE issuer = $1 AND subject = $2;
 
 -- name: CreateAccount :exec
-INSERT INTO accounts (id, time_zone)
-VALUES ($1, $2);
+INSERT INTO accounts (id, email, time_zone)
+VALUES ($1, $2, $3);
 
 -- name: CreateAuthIdentity :execrows
 INSERT INTO auth_identities (issuer, subject, user_id)
@@ -17,7 +17,7 @@ DELETE FROM accounts
 WHERE id = $1;
 
 -- name: FindAccountByID :one
-SELECT id, username, atcoder_id, time_zone
+SELECT id, email, username, atcoder_id, time_zone
 FROM accounts
 WHERE id = $1;
 
@@ -29,4 +29,4 @@ SET
     username = $4,
     updated_at = now()
 WHERE id = $1
-RETURNING id, username, atcoder_id, time_zone;
+RETURNING id, email, username, atcoder_id, time_zone;

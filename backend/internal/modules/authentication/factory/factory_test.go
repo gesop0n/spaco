@@ -30,6 +30,7 @@ func TestNew(t *testing.T) {
 			context.Context,
 			string,
 			string,
+			string,
 		) (identifier.UserID, error) {
 			return identifier.NewUserID(), nil
 		}),

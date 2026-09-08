@@ -49,12 +49,17 @@ func (u *Authenticate) Execute(
 	if err != nil {
 		return identifier.UserID{}, fmt.Errorf("verify access token: %w", err)
 	}
-	if identity.Issuer() == "" || identity.Subject() == "" {
+	if identity.Issuer() == "" || identity.Subject() == "" || identity.Email() == "" {
 		return identifier.UserID{}, ErrInvalidVerifierResult
 	}
 
 	// 外部identityとアプリ内ユーザーの対応付けはaccount moduleへ委譲する。
-	userID, err := u.resolver.ResolveUser(ctx, identity.Issuer(), identity.Subject())
+	userID, err := u.resolver.ResolveUser(
+		ctx,
+		identity.Issuer(),
+		identity.Subject(),
+		identity.Email(),
+	)
 	if err != nil {
 		return identifier.UserID{}, fmt.Errorf("resolve authenticated user: %w", err)
 	}

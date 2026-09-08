@@ -17,6 +17,8 @@ message Account {
   bool setup_completed = 4;
   // アプリ内の表示名。初期設定前は未設定。
   optional string username = 5;
+  // 認証時に確定し、プロフィールからは変更しないメールアドレス。
+  string email = 6;
 }
 
 message GetCurrentAccountResponse {
