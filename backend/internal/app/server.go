@@ -17,6 +17,7 @@ import (
 	"github.com/gesop0n/spaco/backend/internal/config"
 	accountfactory "github.com/gesop0n/spaco/backend/internal/modules/account/factory"
 	authenticationfactory "github.com/gesop0n/spaco/backend/internal/modules/authentication/factory"
+	catalogfactory "github.com/gesop0n/spaco/backend/internal/modules/catalog/factory"
 )
 
 type Server struct {
@@ -41,6 +42,11 @@ func NewServer(ctx context.Context, cfg config.Config) (*Server, error) {
 		return nil, fmt.Errorf("ping database: %w", err)
 	}
 
+	catalogModule, err := catalogfactory.New(database, catalogfactory.Config{})
+	if err != nil {
+		database.Close()
+		return nil, err
+	}
 	accountModule, err := accountfactory.New(database)
 	if err != nil {
 		database.Close()
@@ -68,6 +74,7 @@ func NewServer(ctx context.Context, cfg config.Config) (*Server, error) {
 	)
 	mounts := []func(...connect.HandlerOption) (string, http.Handler){
 		accountModule.ConnectHandler,
+		catalogModule.ConnectHandler,
 	}
 	connectHandlers := make([]connectHandler, 0, len(mounts))
 	for _, mount := range mounts {

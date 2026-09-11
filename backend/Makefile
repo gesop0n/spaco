@@ -12,13 +12,16 @@ export GOOSE_DRIVER := postgres
 export GOOSE_DBSTRING := $(DATABASE_URL)$(DATABASE_URL_QUERY_SEPARATOR)default_query_exec_mode=exec
 export GOOSE_MIGRATION_DIR := migrations
 
-.PHONY: help dev build test test-integration test-race vet lint sqlc-vet fmt fmt-check check tidy generate generate-rpc generate-sql migrate-up migrate-down migrate-status migrate-create
+.PHONY: help dev catalog-sync build test test-integration test-race vet lint sqlc-vet fmt fmt-check check tidy generate generate-rpc generate-sql migrate-up migrate-down migrate-status migrate-create
 
 help: ## 利用できるtargetを表示する
 	@awk 'BEGIN {FS = ":.*## "} /^[a-zA-Z0-9_-]+:.*## / {printf "%-18s %s\n", $$1, $$2}' $(MAKEFILE_LIST)
 
 dev: ## API serverを起動する（.envを読み込む）
 	go run ./cmd/server
+
+catalog-sync: ## AtCoder Problemsからコンテスト・問題情報を取り込む（.envを読み込む）
+	go run ./cmd/catalog-sync
 
 build: ## API serverをbin/serverへbuildする
 	mkdir -p bin
@@ -29,7 +32,9 @@ test: ## unit testを実行する
 
 test-integration: export TEST_DATABASE_URL := $(DATABASE_URL)
 test-integration: ## PostgreSQLを使うintegration testを実行する
-	go test -count=1 ./internal/modules/account/internal/adapter/postgres
+	go test -count=1 \
+		./internal/modules/account/internal/adapter/postgres \
+		./internal/modules/catalog/internal/adapter/postgres
 
 test-race: ## race detector付きでtestを実行する
 	go test -race ./...
