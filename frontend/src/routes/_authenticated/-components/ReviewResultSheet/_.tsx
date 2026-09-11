@@ -7,6 +7,7 @@ import {
   RotateCcw,
   X,
 } from "lucide-react";
+import type { ReviewItem } from "@/__generated__/spaco/review/v1/review_pb";
 import { Button } from "@/components/ui/button";
 import {
   Sheet,
@@ -17,33 +18,32 @@ import {
   SheetTitle,
 } from "@/components/ui/sheet";
 import { ProblemIdentity } from "../ProblemIdentity";
-import {
-  formatDay,
-  localDateTime,
-  previewIntervals,
-  problemUrl,
-  resultLabels,
-} from "../ReviewWorkspace/model";
-import type { ReviewResult, StudyProblem } from "../ReviewWorkspace/types";
+import { itemProblem, logLabel } from "../ReviewWorkspace/api";
+import { difficultyLabels, formatDay, localDateTime, resultLabels } from "../ReviewWorkspace/model";
+import type { DifficultyKey, ResultKey } from "../ReviewWorkspace/types";
 import { useReviewResultSheet } from "./_.hook";
 
-const outcomes: { value: ReviewResult; description: string; icon: typeof Check }[] = [
+const outcomes: { value: ResultKey; description: string; icon: typeof Check }[] = [
   { value: "independent", description: "何も見ずに、考え方から再現できた", icon: CircleCheck },
   { value: "assisted", description: "解説やヒントを参考にして正解した", icon: BookOpen },
-  { value: "retry", description: "もう少し考える時間が必要だった", icon: RotateCcw },
+  { value: "unsolved", description: "もう少し考える時間が必要だった", icon: RotateCcw },
 ];
+const difficultyOptions: DifficultyKey[] = ["hard", "good", "easy"];
 const inputClassName =
   "min-h-11 w-full min-w-0 rounded-lg border border-input bg-card px-3 py-2.5 text-sm outline-none focus:border-primary focus:ring-3 focus:ring-primary/15 aria-invalid:border-danger";
 
 export function ReviewResultSheet({
-  problem,
+  item,
+  timeZone,
   onClose,
 }: {
-  problem: StudyProblem;
+  item: ReviewItem;
+  timeZone: string;
   onClose: () => void;
 }) {
-  const form = useReviewResultSheet(problem);
+  const form = useReviewResultSheet(item, timeZone);
   const { errors, isSubmitting } = form.formState;
+  const problemUrl = item.problem?.url;
   return (
     <Sheet
       open
@@ -58,7 +58,7 @@ export function ReviewResultSheet({
       >
         <SheetHeader className="border-b border-border px-6 py-6 pr-16 sm:px-8">
           <span className="mb-2 text-[10px] font-semibold tracking-[0.16em] text-primary">
-            REVIEW SESSION · UIプレビュー
+            REVIEW SESSION
           </span>
           <SheetTitle className="text-xl">
             {form.saved ? "復習を記録しました" : "復習を記録"}
@@ -77,25 +77,29 @@ export function ReviewResultSheet({
           <X aria-hidden="true" />
         </SheetClose>
         <div className="border-b border-border bg-background/70 px-6 py-5 sm:px-8">
-          <ProblemIdentity problem={problem} />
+          <ProblemIdentity problem={itemProblem(item)} />
         </div>
 
-        {form.saved && form.nextDay ? (
+        {form.saved ? (
           <div className="flex flex-1 flex-col items-center px-6 py-10 text-center sm:px-8">
             <span className="grid size-16 place-items-center rounded-full bg-accent text-primary">
               <Check className="size-7" aria-hidden="true" />
             </span>
             <h2 className="mt-6 text-xl font-semibold">ひとつ、積み重ねました。</h2>
-            <p className="mt-3 text-sm text-muted-foreground">{resultLabels[form.saved.result]}</p>
+            <p className="mt-3 text-sm text-muted-foreground">{logLabel(form.saved)}</p>
             <div className="mt-8 w-full rounded-2xl border border-primary/15 bg-aurora p-6">
               <p className="flex items-center justify-center gap-2 text-xs text-muted-foreground">
                 <CalendarDays className="size-4" aria-hidden="true" />
                 次回の復習予定
               </p>
-              <p className="mt-3 text-2xl font-semibold text-primary">{formatDay(form.nextDay)}</p>
-              <p className="mt-2 text-xs text-muted-foreground">
-                実施日から{previewIntervals[form.saved.result]}日後 · プレビュー用の仮日程
+              <p className="mt-3 text-2xl font-semibold text-primary">
+                {formatDay(form.saved.nextDueOn)}
               </p>
+              {form.savedDaysAfterPerformed !== undefined && (
+                <p className="mt-2 text-xs text-muted-foreground">
+                  実施日から{form.savedDaysAfterPerformed}日後
+                </p>
+              )}
             </div>
             {form.saved.note && (
               <p className="mt-6 w-full whitespace-pre-wrap break-words rounded-xl bg-muted/60 p-4 text-left text-sm leading-6 text-muted-foreground">
@@ -105,9 +109,6 @@ export function ReviewResultSheet({
             <Button onClick={onClose} className="mt-8 h-11 w-full">
               今日の復習に戻る
             </Button>
-            <p className="mt-4 text-xs leading-5 text-muted-foreground">
-              記録はこのプレビュー内のみで保持されます。
-            </p>
           </div>
         ) : (
           <form
@@ -115,18 +116,22 @@ export function ReviewResultSheet({
             noValidate
             className="flex flex-1 flex-col px-6 py-6 sm:px-8"
           >
-            <a
-              href={problemUrl(problem)}
-              target="_blank"
-              rel="noreferrer"
-              className="inline-flex min-h-11 items-center justify-center gap-2 rounded-lg border border-primary/20 bg-accent/60 px-4 py-3 text-sm font-semibold text-primary hover:bg-accent"
-            >
-              AtCoderで問題を開く
-              <ExternalLink className="size-4" aria-hidden="true" />
-            </a>
-            <p className="mt-2 text-center text-[11px] leading-5 text-muted-foreground">
-              問題を読む・コードを書く・提出する操作はAtCoderで行います。
-            </p>
+            {problemUrl && (
+              <>
+                <a
+                  href={problemUrl}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="inline-flex min-h-11 items-center justify-center gap-2 rounded-lg border border-primary/20 bg-accent/60 px-4 py-3 text-sm font-semibold text-primary hover:bg-accent"
+                >
+                  AtCoderで問題を開く
+                  <ExternalLink className="size-4" aria-hidden="true" />
+                </a>
+                <p className="mt-2 text-center text-[11px] leading-5 text-muted-foreground">
+                  問題を読む・コードを書く・提出する操作はAtCoderで行います。
+                </p>
+              </>
+            )}
             <fieldset
               className="mt-7"
               aria-describedby={errors.result ? "review-result-error" : undefined}
@@ -166,6 +171,26 @@ export function ReviewResultSheet({
                 </p>
               )}
             </fieldset>
+            {form.selectedResult === "independent" && (
+              <fieldset className="mt-5">
+                <legend className="mb-3 text-sm font-semibold">手応え</legend>
+                <div className="grid grid-cols-3 gap-2">
+                  {difficultyOptions.map((value) => (
+                    <label key={value} className="cursor-pointer">
+                      <input
+                        type="radio"
+                        value={value}
+                        {...form.register("difficulty")}
+                        className="peer sr-only"
+                      />
+                      <span className="flex min-h-11 items-center justify-center rounded-lg border border-border px-2 text-center text-xs font-semibold transition-colors peer-checked:border-primary/50 peer-checked:bg-accent/60 peer-checked:text-primary peer-focus-visible:ring-3 peer-focus-visible:ring-primary/25 hover:bg-background">
+                        {difficultyLabels[value]}
+                      </span>
+                    </label>
+                  ))}
+                </div>
+              </fieldset>
+            )}
             <label htmlFor="review-time" className="mt-6 mb-2 text-sm font-semibold">
               実施日時{" "}
               <span className="ml-1 text-[11px] font-normal text-muted-foreground">
@@ -206,14 +231,28 @@ export function ReviewResultSheet({
                 {errors.note.message}
               </p>
             )}
-            <div className="mt-6 rounded-xl bg-background p-3 text-xs leading-6 text-muted-foreground">
+            <div
+              className="mt-6 rounded-xl bg-background p-3 text-xs leading-6 text-muted-foreground"
+              aria-live="polite"
+            >
               次回の予定：
-              {form.selectedResult
-                ? `実施日から${previewIntervals[form.selectedResult]}日後`
-                : "結果を選ぶと表示されます"}
+              {!form.selectedResult
+                ? "結果を選ぶと表示されます"
+                : form.preview
+                  ? `${formatDay(form.preview.nextDueOn)}（${form.preview.daysAfterPerformed}日後）`
+                  : form.previewLoading
+                    ? "計算中…"
+                    : form.previewFailed
+                      ? "予定を計算できませんでした"
+                      : "実施日時を確認すると表示されます"}
               <br />
-              間隔はUI確認用の仮ルールです。提出結果の同期は行いません。
+              間隔は、Ankiと同じアルゴリズム（FSRS）で、これまでの記録から計算します。
             </div>
+            {form.serverError && (
+              <p role="alert" className="mt-4 text-xs leading-5 text-danger">
+                {form.serverError}
+              </p>
+            )}
             <Button type="submit" disabled={isSubmitting} className="mt-5 h-12 w-full gap-2">
               <Check aria-hidden="true" />
               {isSubmitting ? "記録中…" : "結果を記録する"}

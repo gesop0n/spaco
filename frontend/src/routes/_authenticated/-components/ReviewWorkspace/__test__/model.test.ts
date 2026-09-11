@@ -2,30 +2,56 @@ import assert from "node:assert/strict";
 import { test } from "node:test";
 import {
   addDays,
-  dueProblems,
+  daysBetween,
+  dueLabel,
   isValidLocalDateTime,
+  localDateOf,
   localDateTime,
-  problemFromUrl,
-  problemUrl,
-  studyReducer,
+  outcomeLabel,
+  parseProblemUrl,
+  problemTitle,
+  zonedDateTimeToDate,
 } from "../model.ts";
-import type { Problem, ReviewResult } from "../types.ts";
 
-const today = "2026-09-08";
-const problem: Problem = { id: "abc350_a", contestId: "abc350", index: "A", title: "Past ABCs" };
-const register = (problems = [problem]) =>
-  studyReducer([], { type: "register", problems, today, note: "  登録メモ  " });
-
-test("暦日の加算は月末・年末・うるう年に対応する", () => {
+test("暦日の加算と差は月末・年末・うるう年に対応する", () => {
   assert.equal(addDays("2026-12-31", 1), "2027-01-01");
   assert.equal(addDays("2024-02-28", 1), "2024-02-29");
   assert.equal(addDays("2026-02-28", 1), "2026-03-01");
+  assert.equal(daysBetween("2026-09-08", "2026-09-11"), 3);
+  assert.equal(daysBetween("2024-02-28", "2024-03-01"), 2);
+  assert.equal(daysBetween("2026-09-11", "2026-09-11"), 0);
 });
 
-test("実施日時はアカウントのタイムゾーンを使う", () => {
+test("実施日時はアカウントのタイムゾーンで表示する", () => {
   const now = new Date("2026-09-08T15:30:00Z");
   assert.equal(localDateTime("Asia/Tokyo", now), "2026-09-09T00:30");
   assert.equal(localDateTime("America/Los_Angeles", now), "2026-09-08T08:30");
+  assert.equal(localDateOf(now, "Asia/Tokyo"), "2026-09-09");
+  assert.equal(localDateOf(now, "America/Los_Angeles"), "2026-09-08");
+});
+
+test("タイムゾーンでの日時を絶対時刻に変換する", () => {
+  assert.equal(
+    zonedDateTimeToDate("2026-09-09T00:30", "Asia/Tokyo").toISOString(),
+    "2026-09-08T15:30:00.000Z",
+  );
+  assert.equal(
+    zonedDateTimeToDate("2026-09-08T08:30", "America/Los_Angeles").toISOString(),
+    "2026-09-08T15:30:00.000Z",
+  );
+  // 2026-03-08 02:00に夏時間へ切り替わった直後は、UTC-4で変換する。
+  assert.equal(
+    zonedDateTimeToDate("2026-03-08T03:30", "America/New_York").toISOString(),
+    "2026-03-08T07:30:00.000Z",
+  );
+  assert.equal(
+    zonedDateTimeToDate("2026-03-07T23:30", "America/New_York").toISOString(),
+    "2026-03-08T04:30:00.000Z",
+  );
+  for (const timeZone of ["Asia/Tokyo", "Europe/London", "America/Los_Angeles"]) {
+    const value = "2026-07-01T12:05";
+    assert.equal(localDateTime(timeZone, zonedDateTimeToDate(value, timeZone)), value, timeZone);
+  }
 });
 
 test("存在しない日付・時刻や不正な形式を拒否する", () => {
@@ -41,17 +67,21 @@ test("存在しない日付・時刻や不正な形式を拒否する", () => {
   }
 });
 
-test("AtCoderのHTTPS問題URLだけ受け入れ、リンクを正規化する", () => {
-  const parsed = problemFromUrl(
-    " https://atcoder.jp/contests/abc350/tasks/abc350_a/?lang=ja#task-statement ",
-    [problem],
+test("予定日は今日・明日を言葉で表示する", () => {
+  assert.equal(dueLabel("2026-09-08", "2026-09-08"), "今日");
+  assert.equal(dueLabel("2026-09-09", "2026-09-08"), "明日");
+  assert.notEqual(dueLabel("2026-09-10", "2026-09-08"), "明日");
+});
+
+test("AtCoderのHTTPS問題URLだけ受け入れ、大文字を含むIDも読み取る", () => {
+  assert.deepEqual(
+    parseProblemUrl(" https://atcoder.jp/contests/abc350/tasks/abc350_a/?lang=ja#task-statement "),
+    { contestId: "abc350", problemId: "abc350_a" },
   );
-  assert.deepEqual(parsed, problem);
-  assert.equal(problemUrl(parsed!), "https://atcoder.jp/contests/abc350/tasks/abc350_a");
-  assert.equal(
-    problemFromUrl("https://atcoder.jp/contests/abc001/tasks/abc001_1", [])?.title,
-    "abc001_1",
-  );
+  assert.deepEqual(parseProblemUrl("https://atcoder.jp/contests/APG4b/tasks/APG4b_a"), {
+    contestId: "APG4b",
+    problemId: "APG4b_a",
+  });
   for (const url of [
     "javascript:alert(1)",
     "http://atcoder.jp/contests/abc350/tasks/abc350_a",
@@ -61,59 +91,21 @@ test("AtCoderのHTTPS問題URLだけ受け入れ、リンクを正規化する",
     "https://atcoder.jp/contests/abc350",
     "https://atcoder.jp/contests/abc350/tasks/a/extra",
   ]) {
-    assert.equal(problemFromUrl(url, []), undefined, url);
+    assert.equal(parseProblemUrl(url), undefined, url);
   }
 });
 
-test("登録は翌日の予定を作り、復習履歴を増やさず、重複を除外する", () => {
-  const state = register([problem, problem]);
-  assert.equal(state.length, 1);
-  assert.equal(state[0].dueOn, "2026-09-09");
-  assert.equal(state[0].registrationNote, "登録メモ");
-  assert.deepEqual(state[0].history, []);
-  assert.deepEqual(
-    studyReducer(state, { type: "register", problems: [problem], today, note: "上書きしない" }),
-    state,
-  );
+test("結果の表示には、自力ACのときだけ手応えを添える", () => {
+  assert.equal(outcomeLabel("independent", "hard"), "自力でACできた（苦戦した）");
+  assert.equal(outcomeLabel("independent"), "自力でACできた");
+  assert.equal(outcomeLabel("assisted", "easy"), "解説・ヒントを見てACした");
+  assert.equal(outcomeLabel("unsolved"), "ACできなかった");
 });
 
-for (const [result, expected] of Object.entries({
-  independent: "2026-09-17",
-  assisted: "2026-09-13",
-  retry: "2026-09-11",
-})) {
-  test(`${result}の仮の次回予定は元の予定日ではなく実施日から計算する`, () => {
-    const entry = {
-      id: "entry",
-      result: result as ReviewResult,
-      performedAt: "2026-09-10T20:00",
-      note: "結果メモ",
-    };
-    const state = studyReducer(register(), { type: "record", problemId: problem.id, entry });
-    assert.equal(state[0].dueOn, expected);
-    assert.deepEqual(state[0].history, [entry]);
-    assert.equal(state[0].registrationNote, "登録メモ");
-    assert.deepEqual(studyReducer(state, { type: "record", problemId: problem.id, entry }), state);
-  });
-}
-
-test("期限超過は古い順に残り、一時停止・再開でも履歴や予定を変えない", () => {
-  const state = [
-    { ...register()[0], dueOn: today },
-    { ...register()[0], id: "older", dueOn: "2026-09-06" },
-    { ...register()[0], id: "future", dueOn: "2026-09-10" },
-  ];
-  assert.deepEqual(
-    dueProblems(state, today).map(({ id }) => id),
-    ["older", problem.id],
+test("問題名が未補完なら問題IDを表示する", () => {
+  assert.equal(
+    problemTitle({ id: "abc350_d", contestId: "abc350", name: "New Friends" }),
+    "New Friends",
   );
-  const paused = studyReducer(state, { type: "togglePause", problemId: "older" });
-  assert.deepEqual(
-    dueProblems(paused, today).map(({ id }) => id),
-    [problem.id],
-  );
-  const entry = { id: "entry", result: "retry" as const, performedAt: `${today}T12:00`, note: "" };
-  assert.deepEqual(studyReducer(paused, { type: "record", problemId: "older", entry }), paused);
-  assert.deepEqual(studyReducer(paused, { type: "togglePause", problemId: "older" }), state);
-  assert.deepEqual(studyReducer(state, { type: "record", problemId: "missing", entry }), state);
+  assert.equal(problemTitle({ id: "abc999_a", contestId: "abc999" }), "abc999_a");
 });

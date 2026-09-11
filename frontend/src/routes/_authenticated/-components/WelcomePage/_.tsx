@@ -39,18 +39,15 @@ export function WelcomePage() {
           解いた問題を、次の「解ける」につなげよう。
         </p>
         <p className="mt-2 max-w-lg text-sm leading-7 text-muted-foreground">
-          あなたのペースで、少しずつ。まずはサンプルデータで、問題の登録と復習を試してみましょう。操作内容は再読み込みでリセットされます。
+          あなたのペースで、少しずつ。まずは、もう一度解きたい問題を登録してみましょう。
         </p>
       </section>
 
       <section aria-labelledby="upcoming-title">
         <div className="mb-4 flex flex-wrap items-center gap-3">
           <h2 id="upcoming-title" className="text-sm font-semibold">
-            学習スペースを試す
+            学習をはじめる
           </h2>
-          <span className="rounded-md border border-border bg-card/70 px-2 py-0.5 text-[11px] text-muted-foreground">
-            UIプレビュー
-          </span>
         </div>
         <div className="grid gap-3 lg:grid-cols-3">
           {features.map(({ icon: Icon, title, description, to }) => (

@@ -1,17 +1,26 @@
-import type { Problem, ReviewResult, StudyAction, StudyProblem } from "./types";
+import type { DifficultyKey, ProblemReference, ProblemSummary, ResultKey } from "./types";
 
-export const resultLabels: Record<ReviewResult, string> = {
+export const resultLabels: Record<ResultKey, string> = {
   independent: "自力でACできた",
   assisted: "解説・ヒントを見てACした",
-  retry: "ACできなかった",
+  unsolved: "ACできなかった",
 };
 
-/** UI確認用の仮の間隔。実際のスケジューリングには使用しない。 */
-export const previewIntervals: Record<ReviewResult, number> = {
-  independent: 7,
-  assisted: 3,
-  retry: 1,
+export const difficultyLabels: Record<DifficultyKey, string> = {
+  hard: "苦戦した",
+  good: "普通",
+  easy: "余裕だった",
 };
+
+/** 結果と、自力でACできたときの手応えを1つの表示にまとめる。 */
+export function outcomeLabel(result: ResultKey, difficulty?: DifficultyKey): string {
+  if (result !== "independent" || !difficulty) return resultLabels[result];
+  return `${resultLabels[result]}（${difficultyLabels[difficulty]}）`;
+}
+
+export function problemTitle(problem: ProblemSummary): string {
+  return problem.name || problem.id;
+}
 
 export function addDays(day: string, days: number): string {
   const date = new Date(`${day}T00:00:00Z`);
@@ -19,7 +28,12 @@ export function addDays(day: string, days: number): string {
   return date.toISOString().slice(0, 10);
 }
 
-export function localDateTime(timeZone: string, now = new Date()): string {
+/** YYYY-MM-DD形式の2つの暦日の差を日数で返す。 */
+export function daysBetween(from: string, to: string): number {
+  return Math.round((Date.parse(`${to}T00:00:00Z`) - Date.parse(`${from}T00:00:00Z`)) / 86_400_000);
+}
+
+function zonedParts(timeZone: string, date: Date) {
   const parts = new Intl.DateTimeFormat("en-CA", {
     timeZone,
     year: "numeric",
@@ -27,13 +41,58 @@ export function localDateTime(timeZone: string, now = new Date()): string {
     day: "2-digit",
     hour: "2-digit",
     minute: "2-digit",
+    second: "2-digit",
     hourCycle: "h23",
-  }).formatToParts(now);
-  const value = (name: string) => parts.find((part) => part.type === name)?.value;
-  return `${value("year")}-${value("month")}-${value("day")}T${value("hour")}:${value("minute")}`;
+  }).formatToParts(date);
+  const value = (name: string) => parts.find((part) => part.type === name)?.value ?? "";
+  return {
+    year: value("year"),
+    month: value("month"),
+    day: value("day"),
+    hour: value("hour"),
+    minute: value("minute"),
+    second: value("second"),
+  };
+}
+
+/** timeZoneでの日時をYYYY-MM-DDTHH:mm形式で返す。datetime-localの値に使う。 */
+export function localDateTime(timeZone: string, now = new Date()): string {
+  const { year, month, day, hour, minute } = zonedParts(timeZone, now);
+  return `${year}-${month}-${day}T${hour}:${minute}`;
+}
+
+/** timeZoneで、dateが属する暦日を返す。 */
+export function localDateOf(date: Date, timeZone: string): string {
+  return localDateTime(timeZone, date).slice(0, 10);
+}
+
+/** その時点で、timeZoneの時刻がUTCから何ミリ秒進んでいるかを返す。 */
+function timeZoneOffset(instant: number, timeZone: string): number {
+  const parts = zonedParts(timeZone, new Date(instant));
+  const wallClock = Date.UTC(
+    Number(parts.year),
+    Number(parts.month) - 1,
+    Number(parts.day),
+    Number(parts.hour),
+    Number(parts.minute),
+    Number(parts.second),
+  );
+  return wallClock - Math.floor(instant / 1000) * 1000;
+}
+
+/**
+ * timeZoneでのYYYY-MM-DDTHH:mm形式の日時を、絶対時刻に変換する。
+ * 夏時間の切り替え前後でも正しい時差を使うため、変換後の時刻でもう一度時差を確認する。
+ */
+export function zonedDateTimeToDate(value: string, timeZone: string): Date {
+  const wallClock = Date.parse(`${value}:00Z`);
+  const firstGuess = wallClock - timeZoneOffset(wallClock, timeZone);
+  const offset = timeZoneOffset(firstGuess, timeZone);
+  return new Date(wallClock - offset);
 }
 
 export function formatDay(day: string): string {
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(day)) return day;
   return new Intl.DateTimeFormat("ja-JP", {
     timeZone: "UTC",
     month: "long",
@@ -54,77 +113,19 @@ export function dueLabel(day: string, today: string): string {
   return formatDay(day);
 }
 
-export function problemUrl(problem: Problem): string {
-  return `https://atcoder.jp/contests/${problem.contestId}/tasks/${problem.id}`;
-}
-
-/** URLの形だけを検証する。存在確認やAtCoderへのアクセスは行わない。 */
-export function problemFromUrl(value: string, catalog: Problem[]): Problem | undefined {
+/**
+ * AtCoderの問題URLの形だけを確認する。問題の実在確認と正規化はサーバーが行う。
+ * APG4bのように大文字を含むIDも受け入れる。
+ */
+export function parseProblemUrl(value: string): ProblemReference | undefined {
   try {
     const url = new URL(value.trim());
     if (url.origin !== "https://atcoder.jp" || url.username || url.password) return;
-    const match = url.pathname.match(/^\/contests\/([a-z0-9_-]+)\/tasks\/([a-z0-9_-]+)\/?$/);
+    const match = url.pathname.match(/^\/contests\/([A-Za-z0-9_-]+)\/tasks\/([A-Za-z0-9_-]+)\/?$/);
     if (!match) return;
-    const [, contestId, id] = match;
-    return (
-      catalog.find((problem) => problem.id === id) ?? {
-        id,
-        contestId,
-        index: id.split("_").at(-1)?.slice(0, 2).toUpperCase() || "?",
-        title: id,
-      }
-    );
+    const [, contestId, problemId] = match;
+    return { contestId, problemId };
   } catch {
     return;
   }
-}
-
-export function studyReducer(state: StudyProblem[], action: StudyAction): StudyProblem[] {
-  switch (action.type) {
-    case "register": {
-      const registered = new Set(state.map((problem) => problem.id));
-      const additions = action.problems
-        .filter((problem) => {
-          if (registered.has(problem.id)) return false;
-          registered.add(problem.id);
-          return true;
-        })
-        .map((problem) => ({
-          ...problem,
-          registeredOn: action.today,
-          dueOn: addDays(action.today, 1),
-          paused: false,
-          registrationNote: action.note.trim(),
-          history: [],
-        }));
-      return [...state, ...additions];
-    }
-    case "record":
-      return state.map((problem) => {
-        if (
-          problem.id !== action.problemId ||
-          problem.paused ||
-          problem.history.some(({ id }) => id === action.entry.id)
-        )
-          return problem;
-        return {
-          ...problem,
-          dueOn: addDays(
-            action.entry.performedAt.slice(0, 10),
-            previewIntervals[action.entry.result],
-          ),
-          history: [...problem.history, action.entry],
-        };
-      });
-    case "togglePause":
-      return state.map((problem) =>
-        problem.id === action.problemId ? { ...problem, paused: !problem.paused } : problem,
-      );
-  }
-}
-
-export function dueProblems(problems: StudyProblem[], today: string): StudyProblem[] {
-  return problems
-    .filter((problem) => !problem.paused && problem.dueOn <= today)
-    .sort((a, b) => a.dueOn.localeCompare(b.dueOn) || a.id.localeCompare(b.id));
 }

@@ -1,9 +1,20 @@
 import { Link } from "@tanstack/react-router";
-import { BookOpen, CalendarDays, History, Pause, Play, Plus, Search } from "lucide-react";
+import {
+  BookOpen,
+  CalendarDays,
+  History,
+  Pause,
+  Play,
+  Plus,
+  RotateCcw,
+  Search,
+} from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { Skeleton } from "@/components/ui/skeleton";
 import { LearningPageLayout } from "../LearningPageLayout";
 import { ProblemIdentity } from "../ProblemIdentity";
-import { dueLabel, formatDay, resultLabels } from "../ReviewWorkspace/model";
+import { itemProblem, logLabel, performedOn, performedTime } from "../ReviewWorkspace/api";
+import { dueLabel, formatDay, problemTitle } from "../ReviewWorkspace/model";
 import { useReviewListPage } from "./_.hook";
 
 const filters = [
@@ -65,119 +76,154 @@ export function ReviewListPage() {
       <p className="-mt-2 text-xs leading-6 text-muted-foreground">
         一時停止しても履歴は残ります。再開すると、予定日を過ぎた問題は今日の復習に戻ります。
       </p>
-      <div className="grid gap-4">
-        {page.visible.map((problem) => (
-          <article
-            key={problem.id}
-            aria-label={problem.title}
-            className="min-w-0 overflow-hidden rounded-2xl border border-border bg-card shadow-card"
-          >
-            <div className="p-5 sm:p-6">
-              <div className="flex flex-wrap items-center justify-between gap-4">
-                <ProblemIdentity problem={problem} />
-                <span
-                  className={`inline-flex items-center gap-1.5 rounded-md px-2.5 py-1 text-[11px] ${problem.paused ? "bg-muted text-muted-foreground" : problem.dueOn < page.today ? "bg-amber-50 text-amber-800 dark:bg-amber-950 dark:text-amber-200" : "bg-accent text-primary"}`}
-                >
-                  <CalendarDays className="size-3.5" aria-hidden="true" />
-                  {problem.paused
-                    ? "一時停止中"
-                    : problem.dueOn < page.today
-                      ? `${formatDay(problem.dueOn)}予定 · 期限超過`
-                      : `次の復習：${dueLabel(problem.dueOn, page.today)}`}
-                </span>
-              </div>
-              <div className="mt-4 flex flex-wrap items-center justify-between gap-3">
-                <p className="text-xs leading-6 text-muted-foreground">
-                  復習 {problem.history.length}回<span className="mx-2">·</span>
-                  {problem.history.length
-                    ? resultLabels[problem.history.at(-1)!.result]
-                    : "まだ復習していません"}
-                </p>
-                <div className="flex flex-wrap items-center gap-2">
-                  <Button
-                    variant="ghost"
-                    className="min-h-10 gap-1.5 text-xs text-muted-foreground"
-                    onClick={() => page.togglePause(problem.id)}
-                  >
-                    {problem.paused ? <Play aria-hidden="true" /> : <Pause aria-hidden="true" />}
-                    {problem.paused ? "再開" : "一時停止"}
-                  </Button>
-                  {!problem.paused && (
-                    <Link
-                      to="/reviews"
-                      search={{ problem: problem.id }}
-                      className="inline-flex min-h-10 items-center rounded-lg border border-border px-4 text-xs font-semibold text-primary hover:bg-accent"
+      {page.actionError && (
+        <p role="alert" className="rounded-xl border border-border bg-card p-4 text-sm text-danger">
+          {page.actionError}
+        </p>
+      )}
+      {page.error ? (
+        <div
+          role="alert"
+          className="flex flex-wrap items-center justify-between gap-4 rounded-2xl border border-border bg-card p-6 text-sm"
+        >
+          <p>{page.error}</p>
+          <Button variant="secondary" className="h-10 gap-2 px-4" onClick={page.retry}>
+            <RotateCcw aria-hidden="true" />
+            再読み込み
+          </Button>
+        </div>
+      ) : page.loading ? (
+        <div className="grid gap-4" aria-label="復習リストを読み込み中">
+          {[0, 1, 2].map((index) => (
+            <Skeleton key={index} className="h-32 rounded-2xl" />
+          ))}
+        </div>
+      ) : (
+        <div className="grid gap-4">
+          {page.visible.map((item) => {
+            const problem = itemProblem(item);
+            const logs = page.logsOf(item);
+            const overdue = item.dueOn < page.today;
+            return (
+              <article
+                key={item.id}
+                aria-label={problemTitle(problem)}
+                className="min-w-0 overflow-hidden rounded-2xl border border-border bg-card shadow-card"
+              >
+                <div className="p-5 sm:p-6">
+                  <div className="flex flex-wrap items-center justify-between gap-4">
+                    <ProblemIdentity problem={problem} />
+                    <span
+                      className={`inline-flex items-center gap-1.5 rounded-md px-2.5 py-1 text-[11px] ${item.paused ? "bg-muted text-muted-foreground" : overdue ? "bg-amber-50 text-amber-800 dark:bg-amber-950 dark:text-amber-200" : "bg-accent text-primary"}`}
                     >
-                      取り組む
-                    </Link>
-                  )}
+                      <CalendarDays className="size-3.5" aria-hidden="true" />
+                      {item.paused
+                        ? "一時停止中"
+                        : overdue
+                          ? `${formatDay(item.dueOn)}予定 · 期限超過`
+                          : `次の復習：${dueLabel(item.dueOn, page.today)}`}
+                    </span>
+                  </div>
+                  <div className="mt-4 flex flex-wrap items-center justify-between gap-3">
+                    <p className="text-xs leading-6 text-muted-foreground">
+                      復習 {item.reviewCount}回<span className="mx-2">·</span>
+                      {item.lastLog ? logLabel(item.lastLog) : "まだ復習していません"}
+                    </p>
+                    <div className="flex flex-wrap items-center gap-2">
+                      <Button
+                        variant="ghost"
+                        className="min-h-10 gap-1.5 text-xs text-muted-foreground"
+                        disabled={!!page.pendingItemId}
+                        onClick={() => page.togglePause(item)}
+                      >
+                        {item.paused ? <Play aria-hidden="true" /> : <Pause aria-hidden="true" />}
+                        {page.pendingItemId === item.id
+                          ? "更新中…"
+                          : item.paused
+                            ? "再開"
+                            : "一時停止"}
+                      </Button>
+                      {!item.paused && (
+                        <Link
+                          to="/reviews"
+                          search={{ problem: problem.id }}
+                          className="inline-flex min-h-10 items-center rounded-lg border border-border px-4 text-xs font-semibold text-primary hover:bg-accent"
+                        >
+                          取り組む
+                        </Link>
+                      )}
+                    </div>
+                  </div>
                 </div>
-              </div>
+                <details className="group border-t border-border bg-muted/25">
+                  <summary className="cursor-pointer px-5 py-3 text-xs font-medium text-muted-foreground hover:text-foreground sm:px-6">
+                    <span className="ml-1 inline-flex items-center gap-2">
+                      <History className="size-3.5" aria-hidden="true" />
+                      登録メモ・復習の履歴
+                    </span>
+                  </summary>
+                  <div className="grid gap-4 px-5 pt-2 pb-5 sm:px-6">
+                    <div className="rounded-xl border border-border bg-card p-4">
+                      <p className="text-[11px] text-muted-foreground">
+                        {formatDay(item.registeredOn)}に登録
+                      </p>
+                      <p className="mt-2 whitespace-pre-wrap break-words text-xs leading-6">
+                        {item.registrationNote || "登録メモはありません。"}
+                      </p>
+                    </div>
+                    {logs.length ? (
+                      <ol className="grid gap-3" aria-label="復習の履歴">
+                        {logs.toReversed().map((log) => (
+                          <li key={log.id} className="border-l-2 border-primary/25 py-1 pl-4">
+                            <p className="text-[11px] text-muted-foreground">
+                              {formatDay(performedOn(log, page.timeZone))}{" "}
+                              {performedTime(log, page.timeZone)} · {page.timeZone}
+                            </p>
+                            <p className="mt-1 text-xs font-semibold">{logLabel(log)}</p>
+                            <p className="mt-1 text-[11px] text-muted-foreground">
+                              次回の予定：{formatDay(log.nextDueOn)}
+                            </p>
+                            {log.note && (
+                              <p className="mt-2 whitespace-pre-wrap break-words text-xs leading-6 text-muted-foreground">
+                                {log.note}
+                              </p>
+                            )}
+                          </li>
+                        ))}
+                      </ol>
+                    ) : (
+                      <p className="px-1 text-xs text-muted-foreground">
+                        まだ復習の記録はありません。登録は復習回数に含まれません。
+                      </p>
+                    )}
+                  </div>
+                </details>
+              </article>
+            );
+          })}
+          {!page.visible.length && (
+            <div className="rounded-2xl border border-dashed border-border bg-card/70 px-5 py-14 text-center">
+              <BookOpen className="mx-auto size-7 text-primary" aria-hidden="true" />
+              <h2 className="mt-4 font-semibold">
+                {page.query || page.filter !== "all"
+                  ? "条件に合う問題はありません"
+                  : "復習したい問題を集めよう"}
+              </h2>
+              <p className="mt-2 text-sm text-muted-foreground">
+                {page.query || page.filter !== "all"
+                  ? "検索語や絞り込みを変えてみてください。"
+                  : "コンテストや問題URLから登録できます。"}
+              </p>
+              <Link
+                to="/problems"
+                className="mt-5 inline-flex min-h-10 items-center text-sm font-semibold text-primary"
+              >
+                問題を登録する →
+              </Link>
             </div>
-            <details className="group border-t border-border bg-muted/25">
-              <summary className="cursor-pointer px-5 py-3 text-xs font-medium text-muted-foreground hover:text-foreground sm:px-6">
-                <span className="ml-1 inline-flex items-center gap-2">
-                  <History className="size-3.5" aria-hidden="true" />
-                  登録メモ・復習の履歴
-                </span>
-              </summary>
-              <div className="grid gap-4 px-5 pt-2 pb-5 sm:px-6">
-                <div className="rounded-xl border border-border bg-card p-4">
-                  <p className="text-[11px] text-muted-foreground">
-                    {formatDay(problem.registeredOn)}に登録
-                  </p>
-                  <p className="mt-2 whitespace-pre-wrap break-words text-xs leading-6">
-                    {problem.registrationNote || "登録メモはありません。"}
-                  </p>
-                </div>
-                {problem.history.length ? (
-                  <ol className="grid gap-3" aria-label="復習の履歴">
-                    {problem.history.toReversed().map((entry) => (
-                      <li key={entry.id} className="border-l-2 border-primary/25 py-1 pl-4">
-                        <p className="text-[11px] text-muted-foreground">
-                          {formatDay(entry.performedAt.slice(0, 10))}{" "}
-                          {entry.performedAt.slice(11, 16)} · {page.timeZone}
-                        </p>
-                        <p className="mt-1 text-xs font-semibold">{resultLabels[entry.result]}</p>
-                        {entry.note && (
-                          <p className="mt-2 whitespace-pre-wrap break-words text-xs leading-6 text-muted-foreground">
-                            {entry.note}
-                          </p>
-                        )}
-                      </li>
-                    ))}
-                  </ol>
-                ) : (
-                  <p className="px-1 text-xs text-muted-foreground">
-                    まだ復習の記録はありません。登録は復習回数に含まれません。
-                  </p>
-                )}
-              </div>
-            </details>
-          </article>
-        ))}
-        {!page.visible.length && (
-          <div className="rounded-2xl border border-dashed border-border bg-card/70 px-5 py-14 text-center">
-            <BookOpen className="mx-auto size-7 text-primary" aria-hidden="true" />
-            <h2 className="mt-4 font-semibold">
-              {page.query || page.filter !== "all"
-                ? "条件に合う問題はありません"
-                : "復習したい問題を集めよう"}
-            </h2>
-            <p className="mt-2 text-sm text-muted-foreground">
-              {page.query || page.filter !== "all"
-                ? "検索語や絞り込みを変えてみてください。"
-                : "コンテストや問題URLから登録できます。"}
-            </p>
-            <Link
-              to="/problems"
-              className="mt-5 inline-flex min-h-10 items-center text-sm font-semibold text-primary"
-            >
-              問題を登録する →
-            </Link>
-          </div>
-        )}
-      </div>
+          )}
+        </div>
+      )}
     </LearningPageLayout>
   );
 }
