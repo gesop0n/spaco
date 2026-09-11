@@ -128,11 +128,13 @@ jobs:
         id: candidate
         shell: bash
         run: |
+          # value()形式はtrafficの全エントリのURLを「;」でつなぐため、candidateタグの1件だけを取り出す。
           candidate_url="$(
             gcloud run services describe "${CLOUD_RUN_SERVICE}" \
               --project "${PROJECT_ID}" \
               --region "${REGION}" \
-              --format='value(status.traffic.url)'
+              --format=json \
+              | jq -r '[.status.traffic[]? | select(.tag == "candidate") | .url // empty] | if length == 1 then .[0] else empty end'
           )"
           if [[ -z "${candidate_url}" ]]; then
             echo "Candidate URL was not found" >&2
