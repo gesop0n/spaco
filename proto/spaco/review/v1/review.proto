@@ -1,0 +1,219 @@
+syntax = "proto3";
+
+package spaco.review.v1;
+
+import "google/protobuf/timestamp.proto";
+
+// 復習対象の登録、今日の復習、再挑戦の記録を扱う。
+// `_on`で終わる日付は、ユーザーのタイムゾーンでの暦日をYYYY-MM-DD形式で表す。
+service ReviewService {
+  // 選択した問題を復習対象に登録する。登録済みの問題は変更せずに返す。
+  rpc RegisterProblems(RegisterProblemsRequest) returns (RegisterProblemsResponse);
+
+  // AtCoderの問題URLから復習対象に登録する。
+  rpc RegisterProblemByUrl(RegisterProblemByUrlRequest) returns (RegisterProblemByUrlResponse);
+
+  // 指定した問題のうち、登録済みの問題IDを返す。
+  rpc ListRegisteredProblemIds(ListRegisteredProblemIdsRequest) returns (ListRegisteredProblemIdsResponse);
+
+  // 予定日が今日以前の復習対象と、この先の予定を返す。一時停止中の対象は含めない。
+  rpc GetTodayReviews(GetTodayReviewsRequest) returns (GetTodayReviewsResponse);
+
+  // 登録済みの復習対象と、再挑戦の履歴をすべて返す。
+  rpc ListReviewItems(ListReviewItemsRequest) returns (ListReviewItemsResponse);
+
+  // 問題IDから復習対象を返す。
+  rpc GetReviewItem(GetReviewItemRequest) returns (GetReviewItemResponse);
+
+  // 実施日時を仮定し、結果ごとの次回予定日を返す。記録はしない。
+  rpc PreviewReviewSchedule(PreviewReviewScheduleRequest) returns (PreviewReviewScheduleResponse);
+
+  // 再挑戦の結果を記録し、次回予定日を更新する。
+  // 同じrequest_idで再送した場合は、記録済みの結果をそのまま返す。
+  rpc RecordReview(RecordReviewRequest) returns (RecordReviewResponse);
+
+  // 復習対象を一時停止し、今日の復習に出さないようにする。履歴は残す。
+  rpc PauseReviewItem(PauseReviewItemRequest) returns (PauseReviewItemResponse);
+
+  // 一時停止した復習対象を再開する。予定日は変更しない。
+  rpc ResumeReviewItem(ResumeReviewItemRequest) returns (ResumeReviewItemResponse);
+}
+
+// 再挑戦の結果。
+enum ReviewResult {
+  REVIEW_RESULT_UNSPECIFIED = 0;
+  // 解説・ヒントを使わずにACできた。
+  REVIEW_RESULT_INDEPENDENT = 1;
+  // 解説・ヒントを見てACした。自力で思い出せた成功としては扱わない。
+  REVIEW_RESULT_ASSISTED = 2;
+  // ACできなかった。
+  REVIEW_RESULT_UNSOLVED = 3;
+}
+
+// 自力でACできたときの手応え。
+enum Difficulty {
+  DIFFICULTY_UNSPECIFIED = 0;
+  // 苦戦した。
+  DIFFICULTY_HARD = 1;
+  // 普通に解けた。
+  DIFFICULTY_GOOD = 2;
+  // 余裕があった。
+  DIFFICULTY_EASY = 3;
+}
+
+message Problem {
+  // 例: abc350_d
+  string id = 1;
+  // 表示と問題URLに使うコンテストID。
+  string contest_id = 2;
+  // 例: D。問題URLから登録し、まだ補完していない問題では未設定。
+  optional string problem_index = 3;
+  // 問題URLから登録し、まだ補完していない問題では未設定。
+  optional string name = 4;
+  // AtCoderの問題ページのURL。
+  string url = 5;
+}
+
+message ReviewLog {
+  string id = 1;
+  string review_item_id = 2;
+  ReviewResult result = 3;
+  // resultが自力ACのときだけ設定する。
+  Difficulty difficulty = 4;
+  google.protobuf.Timestamp performed_at = 5;
+  string note = 6;
+  // この記録で決まった次回予定日。
+  string next_due_on = 7;
+}
+
+message ReviewItem {
+  string id = 1;
+  Problem problem = 2;
+  string registration_note = 3;
+  google.protobuf.Timestamp registered_at = 4;
+  string registered_on = 5;
+  string due_on = 6;
+  bool paused = 7;
+  // 記録した再挑戦の回数。登録は含めない。
+  int32 review_count = 8;
+  // 最後に記録した再挑戦。未記録なら未設定。
+  ReviewLog last_log = 9;
+}
+
+message RegisterProblemsRequest {
+  // 1〜100件。
+  repeated string problem_ids = 1;
+  // 選択した問題に共通の登録メモ。500文字以内。
+  string note = 2;
+}
+
+message RegisterProblemsResponse {
+  repeated ReviewItem registered_items = 1;
+  repeated ReviewItem already_registered_items = 2;
+}
+
+message RegisterProblemByUrlRequest {
+  // 例: https://atcoder.jp/contests/abc350/tasks/abc350_d
+  string url = 1;
+  // 500文字以内。
+  string note = 2;
+}
+
+message RegisterProblemByUrlResponse {
+  ReviewItem item = 1;
+  // trueの場合、既存の復習対象を変更せずに返す。
+  bool already_registered = 2;
+}
+
+message ListRegisteredProblemIdsRequest {
+  // 1〜200件。
+  repeated string problem_ids = 1;
+}
+
+message ListRegisteredProblemIdsResponse {
+  repeated string problem_ids = 1;
+}
+
+message GetTodayReviewsRequest {}
+
+message GetTodayReviewsResponse {
+  string today = 1;
+  string time_zone = 2;
+  // 予定日が古い順。
+  repeated ReviewItem due_items = 3;
+  // 実施日が今日の再挑戦の記録数。
+  int32 completed_today_count = 4;
+  // 予定日が明日以降の復習対象。予定日が近い順に最大3件。
+  repeated ReviewItem upcoming_items = 5;
+}
+
+message ListReviewItemsRequest {}
+
+message ListReviewItemsResponse {
+  string today = 1;
+  string time_zone = 2;
+  // 登録日時が新しい順。
+  repeated ReviewItem items = 3;
+  // 実施日時が古い順。
+  repeated ReviewLog logs = 4;
+}
+
+message GetReviewItemRequest {
+  string problem_id = 1;
+}
+
+message GetReviewItemResponse {
+  ReviewItem item = 1;
+}
+
+message PreviewReviewScheduleRequest {
+  string review_item_id = 1;
+  google.protobuf.Timestamp performed_at = 2;
+}
+
+message SchedulePreview {
+  ReviewResult result = 1;
+  // resultが自力ACのときだけ設定する。
+  Difficulty difficulty = 2;
+  string next_due_on = 3;
+  // 実施日から次回予定日までの日数。
+  int32 days_after_performed = 4;
+}
+
+message PreviewReviewScheduleResponse {
+  // ACできなかった、解説を見てAC、自力AC（苦戦・普通・余裕）の5件。
+  repeated SchedulePreview previews = 1;
+}
+
+message RecordReviewRequest {
+  string review_item_id = 1;
+  // 二重送信を判定するため、入力画面ごとにクライアントが生成するUUID。
+  string request_id = 2;
+  ReviewResult result = 3;
+  // resultが自力ACのときに指定する。未指定なら普通に解けたとして扱う。
+  Difficulty difficulty = 4;
+  google.protobuf.Timestamp performed_at = 5;
+  // 1000文字以内。
+  string note = 6;
+}
+
+message RecordReviewResponse {
+  ReviewItem item = 1;
+  ReviewLog log = 2;
+}
+
+message PauseReviewItemRequest {
+  string review_item_id = 1;
+}
+
+message PauseReviewItemResponse {
+  ReviewItem item = 1;
+}
+
+message ResumeReviewItemRequest {
+  string review_item_id = 1;
+}
+
+message ResumeReviewItemResponse {
+  ReviewItem item = 1;
+}

@@ -1,0 +1,53 @@
+syntax = "proto3";
+
+package spaco.catalog.v1;
+
+import "google/protobuf/timestamp.proto";
+
+// AtCoder Problemsから取り込んだコンテストと問題を検索する。
+service CatalogService {
+  // コンテストIDまたはコンテスト名で検索する。空文字では開始日時が新しい順に返す。
+  rpc SearchContests(SearchContestsRequest) returns (SearchContestsResponse);
+
+  // コンテストに含まれる問題を、問題番号順に返す。
+  rpc ListContestProblems(ListContestProblemsRequest) returns (ListContestProblemsResponse);
+}
+
+message Contest {
+  // 例: abc350
+  string id = 1;
+  string title = 2;
+  google.protobuf.Timestamp start_at = 3;
+}
+
+message Problem {
+  // 例: abc350_d
+  string id = 1;
+  // 表示と問題URLに使うコンテストID。
+  string contest_id = 2;
+  // 例: D。問題URLから登録し、まだ補完していない問題では未設定。
+  optional string problem_index = 3;
+  // 問題URLから登録し、まだ補完していない問題では未設定。
+  optional string name = 4;
+  // AtCoderの問題ページのURL。
+  string url = 5;
+}
+
+message SearchContestsRequest {
+  // 空白と大文字・小文字の違いは無視する。例: "ABC 350"
+  string query = 1;
+}
+
+message SearchContestsResponse {
+  // 最大30件。
+  repeated Contest contests = 1;
+}
+
+message ListContestProblemsRequest {
+  string contest_id = 1;
+}
+
+message ListContestProblemsResponse {
+  Contest contest = 1;
+  repeated Problem problems = 2;
+}
