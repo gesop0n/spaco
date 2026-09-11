@@ -18,6 +18,7 @@ import (
 	accountfactory "github.com/gesop0n/spaco/backend/internal/modules/account/factory"
 	authenticationfactory "github.com/gesop0n/spaco/backend/internal/modules/authentication/factory"
 	catalogfactory "github.com/gesop0n/spaco/backend/internal/modules/catalog/factory"
+	reviewfactory "github.com/gesop0n/spaco/backend/internal/modules/review/factory"
 )
 
 type Server struct {
@@ -52,6 +53,11 @@ func NewServer(ctx context.Context, cfg config.Config) (*Server, error) {
 		database.Close()
 		return nil, err
 	}
+	reviewModule, err := reviewfactory.New(database, catalogModule, accountModule)
+	if err != nil {
+		database.Close()
+		return nil, err
+	}
 	authenticationModule, err := authenticationfactory.New(
 		ctx,
 		authenticationfactory.Config{
@@ -75,6 +81,7 @@ func NewServer(ctx context.Context, cfg config.Config) (*Server, error) {
 	mounts := []func(...connect.HandlerOption) (string, http.Handler){
 		accountModule.ConnectHandler,
 		catalogModule.ConnectHandler,
+		reviewModule.ConnectHandler,
 	}
 	connectHandlers := make([]connectHandler, 0, len(mounts))
 	for _, mount := range mounts {

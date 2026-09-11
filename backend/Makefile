@@ -34,7 +34,8 @@ test-integration: export TEST_DATABASE_URL := $(DATABASE_URL)
 test-integration: ## PostgreSQLを使うintegration testを実行する
 	go test -count=1 \
 		./internal/modules/account/internal/adapter/postgres \
-		./internal/modules/catalog/internal/adapter/postgres
+		./internal/modules/catalog/internal/adapter/postgres \
+		./internal/modules/review/internal/adapter/postgres
 
 test-race: ## race detector付きでtestを実行する
 	go test -race ./...
