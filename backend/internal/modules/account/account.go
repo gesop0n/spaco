@@ -15,16 +15,21 @@ import (
 // ResolveUserFuncは、外部identityをアプリ内UserIDへ変換する関数である。
 type ResolveUserFunc func(context.Context, string, string, string) (identifier.UserID, error)
 
+// TimeZoneFuncは、ユーザーが設定したIANAタイムゾーン名を返す関数である。
+type TimeZoneFunc func(context.Context, identifier.UserID) (string, error)
+
 // Moduleは、組み立て済みaccount moduleの公開窓口である。
 // use caseやrepositoryの具象型はmodule外へ公開しない。
 type Module struct {
 	handler     accountv1connect.AccountServiceHandler
 	resolveUser ResolveUserFunc
+	timeZone    TimeZoneFunc
 }
 
 func NewModule(
 	handler accountv1connect.AccountServiceHandler,
 	resolveUser ResolveUserFunc,
+	timeZone TimeZoneFunc,
 ) (*Module, error) {
 	if handler == nil {
 		return nil, errors.New("create account module: handler is required")
@@ -32,7 +37,16 @@ func NewModule(
 	if resolveUser == nil {
 		return nil, errors.New("create account module: user resolver is required")
 	}
-	return &Module{handler: handler, resolveUser: resolveUser}, nil
+	if timeZone == nil {
+		return nil, errors.New("create account module: time zone reader is required")
+	}
+	return &Module{handler: handler, resolveUser: resolveUser, timeZone: timeZone}, nil
+}
+
+// TimeZoneは、ユーザーが設定したIANAタイムゾーン名を返す。
+// 他moduleは日付の計算に使うだけで、タイムゾーンの設定・変更はaccountだけが行う。
+func (m *Module) TimeZone(ctx context.Context, userID identifier.UserID) (string, error) {
+	return m.timeZone(ctx, userID)
 }
 
 // ResolveUserによりModule自身がauthentication.IUserResolverを満たす。
