@@ -17,6 +17,8 @@ import (
 	"github.com/gesop0n/spaco/backend/internal/config"
 	accountfactory "github.com/gesop0n/spaco/backend/internal/modules/account/factory"
 	authenticationfactory "github.com/gesop0n/spaco/backend/internal/modules/authentication/factory"
+	catalogfactory "github.com/gesop0n/spaco/backend/internal/modules/catalog/factory"
+	reviewfactory "github.com/gesop0n/spaco/backend/internal/modules/review/factory"
 )
 
 type Server struct {
@@ -41,7 +43,17 @@ func NewServer(ctx context.Context, cfg config.Config) (*Server, error) {
 		return nil, fmt.Errorf("ping database: %w", err)
 	}
 
+	catalogModule, err := catalogfactory.New(database, catalogfactory.Config{})
+	if err != nil {
+		database.Close()
+		return nil, err
+	}
 	accountModule, err := accountfactory.New(database)
+	if err != nil {
+		database.Close()
+		return nil, err
+	}
+	reviewModule, err := reviewfactory.New(database, catalogModule, accountModule)
 	if err != nil {
 		database.Close()
 		return nil, err
@@ -61,14 +73,22 @@ func NewServer(ctx context.Context, cfg config.Config) (*Server, error) {
 		return nil, err
 	}
 
-	accountPath, accountHandler := accountModule.ConnectHandler(
-		connect.WithInterceptors(
-			// loggingを外側に置き、認証Interceptorが返す失敗も記録する。
-			newRPCLoggingInterceptor(slog.Default()),
-			authenticationModule.Interceptor(),
-		),
+	interceptors := connect.WithInterceptors(
+		// loggingを外側に置き、認証Interceptorが返す失敗も記録する。
+		newRPCLoggingInterceptor(slog.Default()),
+		authenticationModule.Interceptor(),
 	)
-	router := newRouter(accountPath, accountHandler, cfg.Server.AllowedOrigins)
+	mounts := []func(...connect.HandlerOption) (string, http.Handler){
+		accountModule.ConnectHandler,
+		catalogModule.ConnectHandler,
+		reviewModule.ConnectHandler,
+	}
+	connectHandlers := make([]connectHandler, 0, len(mounts))
+	for _, mount := range mounts {
+		path, handler := mount(interceptors)
+		connectHandlers = append(connectHandlers, connectHandler{path: path, handler: handler})
+	}
+	router := newRouter(connectHandlers, cfg.Server.AllowedOrigins)
 
 	return &Server{
 		httpServer: &http.Server{

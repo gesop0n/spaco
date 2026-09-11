@@ -22,6 +22,8 @@ plugins:
     out: frontend/src/__generated__
     opt:
       - target=ts
+      # tsconfigのerasableSyntaxOnlyに合わせ、enumをas constのオブジェクトとして生成する。
+      - erasable_syntax=true
 
 inputs:
   - directory: proto

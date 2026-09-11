@@ -1,28 +1,14 @@
-export type Problem = {
+/** catalog・reviewのどちらのProblemも受け取れる、表示に必要な問題の情報。 */
+export type ProblemSummary = {
   id: string;
   contestId: string;
-  index: string;
-  title: string;
+  problemIndex?: string;
+  name?: string;
 };
 
-export type ReviewResult = "independent" | "assisted" | "retry";
+export type ResultKey = "independent" | "assisted" | "unsolved";
 
-export type ReviewEntry = {
-  id: string;
-  result: ReviewResult;
-  performedAt: string;
-  note: string;
-};
+/** 自力でACできたときの手応え。 */
+export type DifficultyKey = "hard" | "good" | "easy";
 
-export type StudyProblem = Problem & {
-  registeredOn: string;
-  dueOn: string;
-  paused: boolean;
-  registrationNote: string;
-  history: ReviewEntry[];
-};
-
-export type StudyAction =
-  | { type: "register"; problems: Problem[]; today: string; note: string }
-  | { type: "record"; problemId: string; entry: ReviewEntry }
-  | { type: "togglePause"; problemId: string };
+export type ProblemReference = { contestId: string; problemId: string };
