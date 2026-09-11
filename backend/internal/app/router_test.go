@@ -6,34 +6,42 @@ import (
 	"testing"
 )
 
-func TestRouterMountsConnectHandlerWithoutChangingPath(t *testing.T) {
+func TestRouterMountsConnectHandlersWithoutChangingPath(t *testing.T) {
 	t.Parallel()
 
 	const (
-		servicePath   = "/spaco.account.v1.AccountService/"
-		procedurePath = servicePath + "GetCurrentAccount"
+		accountPath = "/spaco.account.v1.AccountService/"
+		reviewPath  = "/spaco.review.v1.ReviewService/"
 	)
-	connectHandler := http.HandlerFunc(func(writer http.ResponseWriter, request *http.Request) {
-		if request.URL.Path != procedurePath {
-			t.Fatalf("request path = %q, want %q", request.URL.Path, procedurePath)
+	handlerFor := func(procedurePath string, status int) http.Handler {
+		return http.HandlerFunc(func(writer http.ResponseWriter, request *http.Request) {
+			if request.URL.Path != procedurePath {
+				t.Fatalf("request path = %q, want %q", request.URL.Path, procedurePath)
+			}
+			writer.WriteHeader(status)
+		})
+	}
+	router := newRouter([]connectHandler{
+		{path: accountPath, handler: handlerFor(accountPath+"GetCurrentAccount", http.StatusAccepted)},
+		{path: reviewPath, handler: handlerFor(reviewPath+"GetTodayReviews", http.StatusCreated)},
+	}, []string{"http://localhost:5173"})
+
+	for procedurePath, want := range map[string]int{
+		accountPath + "GetCurrentAccount": http.StatusAccepted,
+		reviewPath + "GetTodayReviews":    http.StatusCreated,
+	} {
+		response := httptest.NewRecorder()
+		router.ServeHTTP(response, httptest.NewRequest(http.MethodPost, procedurePath, nil))
+		if response.Code != want {
+			t.Fatalf("%s status = %d, want %d", procedurePath, response.Code, want)
 		}
-		writer.WriteHeader(http.StatusAccepted)
-	})
-	router := newRouter(servicePath, connectHandler, []string{"http://localhost:5173"})
-	request := httptest.NewRequest(http.MethodPost, procedurePath, nil)
-	response := httptest.NewRecorder()
-
-	router.ServeHTTP(response, request)
-
-	if response.Code != http.StatusAccepted {
-		t.Fatalf("status = %d, want %d", response.Code, http.StatusAccepted)
 	}
 }
 
 func TestRouterServesHealthCheck(t *testing.T) {
 	t.Parallel()
 
-	router := newRouter("/example.Service/", http.NotFoundHandler(), nil)
+	router := newRouter([]connectHandler{{path: "/example.Service/", handler: http.NotFoundHandler()}}, nil)
 	request := httptest.NewRequest(http.MethodGet, "/health", nil)
 	response := httptest.NewRecorder()
 

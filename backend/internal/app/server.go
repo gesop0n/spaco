@@ -61,14 +61,20 @@ func NewServer(ctx context.Context, cfg config.Config) (*Server, error) {
 		return nil, err
 	}
 
-	accountPath, accountHandler := accountModule.ConnectHandler(
-		connect.WithInterceptors(
-			// loggingを外側に置き、認証Interceptorが返す失敗も記録する。
-			newRPCLoggingInterceptor(slog.Default()),
-			authenticationModule.Interceptor(),
-		),
+	interceptors := connect.WithInterceptors(
+		// loggingを外側に置き、認証Interceptorが返す失敗も記録する。
+		newRPCLoggingInterceptor(slog.Default()),
+		authenticationModule.Interceptor(),
 	)
-	router := newRouter(accountPath, accountHandler, cfg.Server.AllowedOrigins)
+	mounts := []func(...connect.HandlerOption) (string, http.Handler){
+		accountModule.ConnectHandler,
+	}
+	connectHandlers := make([]connectHandler, 0, len(mounts))
+	for _, mount := range mounts {
+		path, handler := mount(interceptors)
+		connectHandlers = append(connectHandlers, connectHandler{path: path, handler: handler})
+	}
+	router := newRouter(connectHandlers, cfg.Server.AllowedOrigins)
 
 	return &Server{
 		httpServer: &http.Server{
